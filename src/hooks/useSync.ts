@@ -20,26 +20,40 @@ export function useSync(gameId: string) {
     setSyncStatus('saving')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No autenticado')
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) {
+        console.error('Session error:', sessionError)
+        throw sessionError
+      }
+      if (!session?.user) throw new Error('No autenticado')
 
-      const savePath = `${user.id}/${gameId}/${saveType}_v${version}`
+      const userId = session.user.id
+      const savePath = `${userId}/${gameId}/${saveType}_v${version}`
 
-      await supabase.storage.from('saves').upload(savePath, blob, { upsert: true })
+      const { error: storageError } = await supabase.storage.from('saves').upload(savePath, blob, { upsert: true })
+      if (storageError) {
+        console.error('Storage upload error:', storageError)
+        throw storageError
+      }
 
-      await supabase.from('saves').upsert(
+      const { error: dbError } = await supabase.from('saves').upsert(
         {
           game_id: gameId,
-          user_id: user.id,
+          user_id: userId,
           save_path: savePath,
           save_type: saveType,
           version,
         },
         { onConflict: 'game_id,user_id,save_type,version' }
       )
+      if (dbError) {
+        console.error('DB upsert error:', dbError)
+        throw dbError
+      }
 
       setSyncStatus('synced')
-    } catch {
+    } catch (e) {
+      console.error('Upload save failed:', e)
       setSyncStatus('error')
     }
   }, [supabase, gameId])
