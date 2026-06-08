@@ -22,6 +22,7 @@ declare global {
     EJS_softLoad?: (url: string) => void
     EJS_startOnLoaded?: boolean
     EJS_loadStateURL?: string
+    EJS_defaultControls?: any
   }
 }
 
@@ -40,6 +41,15 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   const { isMobile } = useDevice()
   const { gamepadConnected } = useGamepad()
 
+  const STORAGE_KEY = `ejs_controls_${game.id}`
+
+  const persistControls = useCallback(() => {
+    const current = (window as any).EJS_emulator?.config?.defaultControllers
+    if (current) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
+    }
+  }, [STORAGE_KEY])
+
   const handleSave = useCallback(async () => {
     const emu = (window as any).EJS_emulator
     if (!emu?.gameManager) return
@@ -55,7 +65,8 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         await uploadSave(blob, 'state')
       }
     } catch {}
-  }, [uploadSave])
+    persistControls()
+  }, [uploadSave, persistControls])
 
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
@@ -65,6 +76,11 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     initialized.current = true
 
     downloadLatestSave('state').then((stateBlob) => {
+      const savedControls = localStorage.getItem(STORAGE_KEY)
+      if (savedControls) {
+        window.EJS_defaultControls = JSON.parse(savedControls)
+      }
+
       window.EJS_player = '#game-emulator'
       window.EJS_core = 'snes9x'
       window.EJS_gameUrl = romUrl
@@ -93,6 +109,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         if (emu) {
           emulatorRef.current = emu
           emu.on('exit', () => {
+            persistControls()
             router.push('/dashboard')
           })
           clearInterval(checkEmulator)
