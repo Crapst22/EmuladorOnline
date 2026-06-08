@@ -28,8 +28,8 @@ export function useSync(gameId: string) {
       if (!session?.user) throw new Error('No autenticado')
 
       const userId = session.user.id
-      const version = Date.now()
-      const savePath = `${userId}/${gameId}/${saveType}_v${version}`
+      const version = Math.floor(Date.now() / 1000)
+      const savePath = `${userId}/${gameId}/${saveType}_v${Date.now()}`
 
       const { error: storageError } = await supabase.storage.from('saves').upload(savePath, blob, { upsert: true })
       if (storageError) {
@@ -47,13 +47,13 @@ export function useSync(gameId: string) {
         }
       )
       if (dbError) {
-        console.error('DB insert error:', dbError)
+        console.error('DB insert error:', JSON.stringify(dbError))
         throw dbError
       }
 
       setSyncStatus('synced')
     } catch (e) {
-      console.error('Upload save failed:', e)
+      console.error('Upload save failed:', (e as any)?.message || JSON.stringify(e))
       setSyncStatus('error')
     }
   }, [supabase, gameId])
