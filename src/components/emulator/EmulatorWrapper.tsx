@@ -44,7 +44,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   const STORAGE_KEY = `ejs_controls_${game.id}`
 
   const persistControls = useCallback(() => {
-    const current = (window as any).EJS_emulator?.config?.defaultControllers
+    const current = (window as any).EJS_emulator?.defaultControllers
     if (current) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
     }
