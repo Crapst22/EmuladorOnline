@@ -4,10 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSync } from '@/hooks/useSync'
 import { useAutoSave } from '@/hooks/useAutoSave'
-import { useDevice } from '@/hooks/useDevice'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
-import { TouchControls } from './TouchControls'
 import type { Game } from '@/types'
 
 declare global {
@@ -38,7 +36,6 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
   const { syncStatus, uploadSave, downloadLatestSave } = useSync(game.id)
-  const { isMobile } = useDevice()
   const { gamepadConnected } = useGamepad()
 
   const handleSave = useCallback(async () => {
@@ -161,8 +158,6 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           </div>
         )}
       </div>
-
-      {isMobile && <TouchControls />}
     </div>
   )
 }

@@ -10,7 +10,7 @@ export function useSync(gameId: string) {
   const supabase = createClient()
   const pendingSaves = useRef<Blob[]>([])
 
-  const uploadSave = useCallback(async (blob: Blob, saveType: 'srm' | 'state', version: number = 1) => {
+  const uploadSave = useCallback(async (blob: Blob, saveType: 'srm' | 'state') => {
     if (!navigator.onLine) {
       pendingSaves.current.push(blob)
       setSyncStatus('offline')
@@ -28,28 +28,26 @@ export function useSync(gameId: string) {
       if (!session?.user) throw new Error('No autenticado')
 
       const userId = session.user.id
+      const version = Date.now()
       const savePath = `${userId}/${gameId}/${saveType}_v${version}`
 
-      await supabase.storage.from('saves').remove([savePath])
-
-      const { error: storageError } = await supabase.storage.from('saves').upload(savePath, blob)
+      const { error: storageError } = await supabase.storage.from('saves').upload(savePath, blob, { upsert: true })
       if (storageError) {
         console.error('Storage upload error:', storageError)
         throw storageError
       }
 
-      const { error: dbError } = await supabase.from('saves').upsert(
+      const { error: dbError } = await supabase.from('saves').insert(
         {
           game_id: gameId,
           user_id: userId,
           save_path: savePath,
           save_type: saveType,
           version,
-        },
-        { onConflict: 'game_id,user_id,save_type,version' }
+        }
       )
       if (dbError) {
-        console.error('DB upsert error:', dbError)
+        console.error('DB insert error:', dbError)
         throw dbError
       }
 
