@@ -1,0 +1,2 @@
+-- No seed data needed for production
+-- This file is for development testing purposes
