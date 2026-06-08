@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSync } from '@/hooks/useSync'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { useDevice } from '@/hooks/useDevice'
@@ -30,7 +31,9 @@ interface EmulatorWrapperProps {
 }
 
 export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
+  const router = useRouter()
   const initialized = useRef(false)
+  const emulatorRef = useRef<any>(null)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
   const { syncStatus, uploadSave, downloadLatestSave } = useSync(game.id)
@@ -61,7 +64,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     if (initialized.current) return
     initialized.current = true
 
-    downloadLatestSave('srm').then((saveBlob) => {
+    downloadLatestSave('state').then((stateBlob) => {
       window.EJS_player = '#game-emulator'
       window.EJS_core = 'snes9x'
       window.EJS_gameUrl = romUrl
@@ -70,8 +73,8 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       window.EJS_disableAutoLang = false
       window.EJS_startOnLoaded = true
 
-      if (saveBlob) {
-        window.EJS_loadStateURL = URL.createObjectURL(saveBlob)
+      if (stateBlob) {
+        window.EJS_loadStateURL = URL.createObjectURL(stateBlob)
       }
 
       const script = document.createElement('script')
@@ -84,8 +87,28 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         setError('Error al cargar el emulador')
       }
       document.body.appendChild(script)
+
+      const checkEmulator = setInterval(() => {
+        const emu = (window as any).EJS_emulator
+        if (emu) {
+          emulatorRef.current = emu
+          emu.on('exit', () => {
+            router.push('/dashboard')
+          })
+          clearInterval(checkEmulator)
+        }
+      }, 100)
     })
-  }, [romUrl, downloadLatestSave])
+
+    return () => {
+      const emu = (window as any).EJS_emulator
+      if (emu?.destroy) {
+        emu.destroy()
+      }
+      emulatorRef.current = null
+      initialized.current = false
+    }
+  }, [romUrl, downloadLatestSave, router])
 
   if (error) {
     return (
