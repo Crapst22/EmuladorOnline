@@ -30,7 +30,9 @@ export function useSync(gameId: string) {
       const userId = session.user.id
       const savePath = `${userId}/${gameId}/${saveType}_v${version}`
 
-      const { error: storageError } = await supabase.storage.from('saves').upload(savePath, blob, { upsert: true })
+      await supabase.storage.from('saves').remove([savePath])
+
+      const { error: storageError } = await supabase.storage.from('saves').upload(savePath, blob)
       if (storageError) {
         console.error('Storage upload error:', storageError)
         throw storageError
