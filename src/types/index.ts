@@ -69,6 +69,7 @@ export interface UserProfile {
   username: string
   avatar_url?: string
   created_at: string
+  is_admin?: boolean
 }
 
 export interface ConflictData {

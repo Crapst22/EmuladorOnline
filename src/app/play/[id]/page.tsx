@@ -13,7 +13,6 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
     .from('games')
     .select('*')
     .eq('id', id)
-    .eq('owner_id', user.id)
     .single()
   if (!game) redirect('/dashboard')
 

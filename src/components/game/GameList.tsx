@@ -18,8 +18,23 @@ export function GameList() {
   const loadGames = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); return }
-    const { data } = await supabase
-      .from('games').select('*').eq('owner_id', user.id).order('updated_at', { ascending: false })
+
+    const { data: sessions } = await supabase
+      .from('play_sessions')
+      .select('game_id')
+      .eq('user_id', user.id)
+
+    const playedIds = [...new Set(sessions?.map(s => s.game_id) || [])]
+
+    let query = supabase.from('games').select('*').order('updated_at', { ascending: false })
+
+    if (playedIds.length > 0) {
+      query = query.or(`owner_id.eq.${user.id},id.in.(${playedIds.join(',')})`)
+    } else {
+      query = query.eq('owner_id', user.id)
+    }
+
+    const { data } = await query
     setGames(data || [])
     setLoading(false)
   }, [supabase])

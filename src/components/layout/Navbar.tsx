@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, User, Settings, Home } from 'lucide-react'
+import { LogOut, User, Settings, Home, Gamepad2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -50,6 +50,11 @@ export function Navbar() {
           <Button variant="ghost" size="icon" asChild>
             <Link href="/dashboard">
               <Home className="h-5 w-5" />
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/juegos">
+              <Gamepad2 className="h-5 w-5" />
             </Link>
           </Button>
           <DropdownMenu>

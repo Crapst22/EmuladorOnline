@@ -50,6 +50,7 @@ export async function uploadRom(formData: FormData) {
   }
 
   revalidatePath('/dashboard')
+  revalidatePath('/juegos')
   return { success: true }
 }
 
@@ -65,7 +66,6 @@ export async function deleteRom(gameId: string) {
     .from('games')
     .select('rom_path')
     .eq('id', gameId)
-    .eq('owner_id', user.id)
     .single()
 
   if (!game) return { error: 'Juego no encontrado' }
@@ -77,6 +77,7 @@ export async function deleteRom(gameId: string) {
   await supabase.from('games').delete().eq('id', gameId)
 
   revalidatePath('/dashboard')
+  revalidatePath('/juegos')
   return { success: true }
 }
 
@@ -91,6 +92,7 @@ export async function renameRom(gameId: string, newTitle: string) {
   if (error) return { error: 'Error al renombrar' }
 
   revalidatePath('/dashboard')
+  revalidatePath('/juegos')
   return { success: true }
 }
 
@@ -111,6 +113,27 @@ export async function getUserGames() {
   return data || []
 }
 
+export async function getAllGames() {
+  const supabase = await createServerSupabaseClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('games')
+    .select('*, users!inner(username)')
+    .order('updated_at', { ascending: false })
+
+  if (!data) return []
+
+  return data.map((game: any) => ({
+    ...game,
+    owner_username: game.users?.username || 'Usuario',
+  }))
+}
+
 export async function getGameById(gameId: string) {
   const supabase = await createServerSupabaseClient()
 
@@ -123,7 +146,6 @@ export async function getGameById(gameId: string) {
     .from('games')
     .select('*')
     .eq('id', gameId)
-    .eq('owner_id', user.id)
     .single()
 
   return data
