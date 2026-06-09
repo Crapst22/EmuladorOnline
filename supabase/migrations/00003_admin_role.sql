@@ -1,7 +1,7 @@
 -- Add admin role to users
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
 
--- Allow all authenticated users to view all user profiles
+-- Allow all authenticated users to view all user profiles except is_admin
 DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
 CREATE POLICY "Users can view all profiles"
   ON public.users FOR SELECT

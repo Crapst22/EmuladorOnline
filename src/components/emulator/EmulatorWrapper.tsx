@@ -89,12 +89,24 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         setLoaded(true)
         const { data: { user } } = await supabaseRef.current.auth.getUser()
         if (user) {
-          const { data: sessionData } = await supabaseRef.current
+          const { data: existing } = await supabaseRef.current
             .from('play_sessions')
-            .insert({ user_id: user.id, game_id: game.id, started_at: new Date().toISOString() })
             .select('id')
-            .single()
-          if (sessionData) sessionIdRef.current = sessionData.id
+            .eq('user_id', user.id)
+            .eq('game_id', game.id)
+            .is('ended_at', null)
+            .maybeSingle()
+
+          if (existing) {
+            sessionIdRef.current = existing.id
+          } else {
+            const { data: sessionData } = await supabaseRef.current
+              .from('play_sessions')
+              .insert({ user_id: user.id, game_id: game.id })
+              .select('id')
+              .single()
+            if (sessionData) sessionIdRef.current = sessionData.id
+          }
         }
       }
       script.onerror = () => { setError('Error al cargar el emulador') }
@@ -128,6 +140,9 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
     return () => {
       for (const fn of cleanups) fn()
+      if (sessionIdRef.current) {
+        supabaseRef.current.from('play_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionIdRef.current).then()
+      }
       const emu = (window as any).EJS_emulator
       if (emu) {
         emu.saveSettings?.()
