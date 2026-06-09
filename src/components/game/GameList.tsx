@@ -83,12 +83,14 @@ export function GameList() {
           Sube tus ROMs de Super Nintendo para empezar a jugar desde cualquier dispositivo
         </p>
         <div className="flex gap-2">
-          <Link href="/juegos">
-            <Button variant="outline" className="gap-2 border-[#FFD700]/20 text-[#FFD700] hover:bg-[#FFD700]/10">
-              <Download className="h-4 w-4" />
-              JUEGOS CARGADOS
-            </Button>
-          </Link>
+          <span className="hidden md:inline-flex">
+            <Link href="/juegos">
+              <Button variant="outline" className="gap-2 border-[#FFD700]/20 text-[#FFD700] hover:bg-[#FFD700]/10">
+                <Download className="h-4 w-4" />
+                JUEGOS CARGADOS
+              </Button>
+            </Link>
+          </span>
           <UploadRom onUploadComplete={loadGames} />
         </div>
       </motion.div>
@@ -103,12 +105,14 @@ export function GameList() {
           <Input placeholder="BUSCAR JUEGOS..." className="!pl-12" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-2">
-          <Link href="/juegos">
-            <Button variant="outline" className="gap-2 border-[#FFD700]/20 text-[#FFD700] hover:bg-[#FFD700]/10">
-              <Download className="h-4 w-4" />
-              JUEGOS CARGADOS
-            </Button>
-          </Link>
+          <span className="hidden md:inline-flex">
+            <Link href="/juegos">
+              <Button variant="outline" className="gap-2 border-[#FFD700]/20 text-[#FFD700] hover:bg-[#FFD700]/10">
+                <Download className="h-4 w-4" />
+                JUEGOS CARGADOS
+              </Button>
+            </Link>
+          </span>
           <UploadRom onUploadComplete={loadGames} />
         </div>
       </div>
