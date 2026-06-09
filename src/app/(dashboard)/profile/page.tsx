@@ -115,7 +115,7 @@ export default function ProfilePage() {
                 <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#FFD700]/40" />
                 <Input
                   id="username"
-                  className="pl-10"
+                  className="!pl-12"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />

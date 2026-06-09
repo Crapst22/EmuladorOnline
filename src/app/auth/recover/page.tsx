@@ -76,7 +76,7 @@ export default function RecoverPage() {
                 id="email"
                 type="email"
                 placeholder="tu@email.com"
-                className="pl-10"
+                className="!pl-12"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

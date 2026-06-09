@@ -63,21 +63,21 @@ export default function RegisterPage() {
             <Label htmlFor="username">NOMBRE DE USUARIO</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#FFD700]/40" />
-              <Input id="username" placeholder="tu_usuario" className="pl-10" value={username} onChange={(e) => setUsername(e.target.value)} required minLength={3} />
+              <Input id="username" placeholder="tu_usuario" className="!pl-12" value={username} onChange={(e) => setUsername(e.target.value)} required minLength={3} />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">EMAIL</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#FFD700]/40" />
-              <Input id="email" type="email" placeholder="tu@email.com" className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input id="email" type="email" placeholder="tu@email.com" className="!pl-12" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">CONTRASENA</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#FFD700]/40" />
-              <Input id="password" type="password" placeholder="********" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+              <Input id="password" type="password" placeholder="********" className="!pl-12" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
             </div>
           </div>
         </CardContent>
