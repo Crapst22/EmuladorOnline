@@ -47,15 +47,10 @@ export function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-2">
-          <span className="hidden md:inline-flex items-center gap-2">
+          <span className="hidden md:inline-flex">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard">
                 <Home className="h-5 w-5" />
-              </Link>
-            </Button>
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/juegos">
-                <Gamepad2 className="h-5 w-5" />
               </Link>
             </Button>
           </span>
