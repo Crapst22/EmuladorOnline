@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
       const [{ count: gameCount }, { data: sessions }] = await Promise.all([
         supabase.from('games').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
-        supabase.from('play_sessions').select('started_at, ended_at, games:game_id(title)').eq('user_id', user.id).order('started_at', { ascending: false }),
+        supabase.from('play_sessions').select('started_at, ended_at, game_id').eq('user_id', user.id).order('started_at', { ascending: false }),
       ])
 
       let totalMinutes = 0
@@ -36,9 +36,8 @@ export default function DashboardPage() {
         }
         const first = sessions[0]
         if (first?.started_at) {
-          const gameInfo = first.games as { title: string }[] | null
-          const gameTitle = gameInfo?.[0]?.title || 'Juego'
-          lastSession = { started_at: first.started_at, game_title: gameTitle }
+          const { data: game } = await supabase.from('games').select('title').eq('id', first.game_id).single()
+          lastSession = { started_at: first.started_at, game_title: game?.title || 'Juego' }
         }
       }
 
