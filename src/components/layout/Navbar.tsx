@@ -41,7 +41,7 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b-2 border-[#FFD700]/20 bg-[#050510]/90">
       <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <img src="/logo.png" alt="RetroVerse" className="h-12 w-auto" />
+          <img src="/logo.png" alt="RetroVerse" className="h-14 w-auto" />
           <span className="font-pixel text-[0.7rem] text-[#FFD700] tracking-wider retro-glow">
             RetroVerse
           </span>
