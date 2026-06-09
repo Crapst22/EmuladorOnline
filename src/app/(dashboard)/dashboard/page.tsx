@@ -61,9 +61,7 @@ export default function DashboardPage() {
     <div className="space-y-8 py-6">
       <div className="retro-panel p-5 retro-speed-lines">
         <div className="flex items-center gap-3 mb-1">
-          <div className="retro-coin">
-            <span className="text-[#050510] font-pixel text-[0.4rem]">B</span>
-          </div>
+          <img src="/favicon-symbol.png" alt="" className="h-8 w-8" />
           <h1 className="font-pixel text-[0.8rem] text-[#FFD700] tracking-wider retro-glow">
             MI BIBLIOTECA
           </h1>
