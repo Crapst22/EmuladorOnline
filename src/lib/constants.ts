@@ -1,6 +1,7 @@
 export const MAX_ROM_SIZE = 50 * 1024 * 1024
 export const ALLOWED_ROM_EXTENSIONS = ['.smc', '.sfc', '.fig']
 export const MAX_SAVE_SIZE = 10 * 1024 * 1024
+export const MAX_SAVES_PER_GAME = 3
 export const AUTO_SAVE_INTERVAL = 30000
 export const SYNC_RETRY_INTERVAL = 5000
 

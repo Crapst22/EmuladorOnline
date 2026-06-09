@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/constants'
+import { cleanupOldSaves } from '@/lib/storage/saves'
 import { revalidatePath } from 'next/cache'
 
 export async function uploadRom(formData: FormData) {
@@ -181,6 +182,8 @@ export async function uploadSave(
   )
 
   if (dbError) return { error: 'Error al registrar guardado' }
+
+  await cleanupOldSaves(gameId, saveType)
 
   return { success: true, savePath }
 }

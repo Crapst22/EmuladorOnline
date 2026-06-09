@@ -1,7 +1,7 @@
 'use server'
 
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { STORAGE_BUCKETS } from '@/lib/constants'
+import { STORAGE_BUCKETS, MAX_SAVES_PER_GAME } from '@/lib/constants'
 
 export async function downloadSave(savePath: string): Promise<ArrayBuffer | null> {
   const supabase = await createServerSupabaseClient()
@@ -43,7 +43,36 @@ export async function saveToCloud(
     { onConflict: 'game_id,user_id,save_type,version' }
   )
 
+  await cleanupOldSaves(gameId, saveType)
+
   return { success: true }
+}
+
+export async function cleanupOldSaves(gameId: string, saveType: 'srm' | 'state') {
+  const supabase = await createServerSupabaseClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: saves } = await supabase
+    .from('saves')
+    .select('*')
+    .eq('game_id', gameId)
+    .eq('user_id', user.id)
+    .eq('save_type', saveType)
+    .order('version', { ascending: false })
+
+  if (!saves || saves.length <= MAX_SAVES_PER_GAME) return
+
+  const toDelete = saves.slice(MAX_SAVES_PER_GAME)
+
+  const pathsToDelete = toDelete.map(s => s.save_path)
+  const idsToDelete = toDelete.map(s => s.id)
+
+  await supabase.storage.from(STORAGE_BUCKETS.SAVES).remove(pathsToDelete)
+  await supabase.from('saves').delete().in('id', idsToDelete)
 }
 
 export async function getSaveVersions(gameId: string, saveType: 'srm' | 'state') {

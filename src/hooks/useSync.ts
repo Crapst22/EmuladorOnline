@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { cleanupOldSaves } from '@/lib/storage/saves'
 import type { SyncStatus } from '@/types'
 
 export function useSync(gameId: string) {
@@ -50,6 +51,8 @@ export function useSync(gameId: string) {
         console.error('DB insert error:', JSON.stringify(dbError))
         throw dbError
       }
+
+      await cleanupOldSaves(gameId, saveType)
 
       setSyncStatus('synced')
     } catch (e) {
