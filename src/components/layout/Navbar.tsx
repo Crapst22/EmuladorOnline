@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Gamepad2, LogOut, User, Settings, Home } from 'lucide-react'
+import { LogOut, User, Settings, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -40,13 +40,8 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b-2 border-[#FFD700]/20 bg-[#050510]/90">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold text-white retro-glow">
-          <div className="retro-coin">
-            <Gamepad2 className="h-3 w-3 text-[#050510]" />
-          </div>
-          <span className="font-pixel text-[0.7rem] text-[#FFD700] tracking-wider">
-            RetroCloud
-          </span>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <img src="/logo.png" alt="RetroCloud" className="h-10 w-auto" />
         </Link>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>

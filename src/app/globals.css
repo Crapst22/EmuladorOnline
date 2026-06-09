@@ -73,7 +73,7 @@
     radial-gradient(1px 1px at 90% 15%, #fff 100%, transparent),
     radial-gradient(1.5px 1.5px at 25% 55%, #fff 100%, transparent);
   background-size: 200px 200px;
-  animation: parallax-stars 60s linear infinite;
+  animation: parallax-stars-1 60s linear infinite;
   opacity: 0.8;
 }
 
@@ -93,7 +93,7 @@
     radial-gradient(1.5px 1.5px at 65% 90%, #FFE44D 100%, transparent),
     radial-gradient(2px 2px at 80% 70%, #FFD700 100%, transparent);
   background-size: 300px 300px;
-  animation: parallax-stars 90s linear infinite reverse;
+  animation: parallax-stars-2 90s linear infinite reverse;
   opacity: 0.5;
 }
 
@@ -113,7 +113,7 @@
     radial-gradient(0.5px 0.5px at 88% 82%, rgba(255,255,255,0.6) 100%, transparent),
     radial-gradient(0.5px 0.5px at 95% 38%, rgba(255,255,255,0.4) 100%, transparent);
   background-size: 150px 150px;
-  animation: parallax-stars 40s linear infinite;
+  animation: parallax-stars-3 40s linear infinite;
   opacity: 0.9;
 }
 
@@ -340,9 +340,19 @@
   50% { text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.2); }
 }
 
-@keyframes parallax-stars {
+@keyframes parallax-stars-1 {
   from { transform: translateY(0); }
   to { transform: translateY(-200px); }
+}
+
+@keyframes parallax-stars-2 {
+  from { transform: translateY(0); }
+  to { transform: translateY(-300px); }
+}
+
+@keyframes parallax-stars-3 {
+  from { transform: translateY(0); }
+  to { transform: translateY(-150px); }
 }
 
 @keyframes flicker {
