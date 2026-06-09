@@ -24,14 +24,14 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-xl border p-4 pr-8 shadow-2xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full',
+  'group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden border-2 p-4 pr-8 shadow-2xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full',
   {
     variants: {
       variant: {
-        default: 'border-zinc-700 bg-zinc-900 text-zinc-300',
-        success: 'border-green-500/30 bg-green-500/10 text-green-400',
-        error: 'border-red-500/30 bg-red-500/10 text-red-400',
-        warning: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400',
+        default: 'border-[#FFD700]/30 bg-[#0A0A2E] text-[#E0E0E0]',
+        success: 'border-[#50C878]/50 bg-[#0A1A0E] text-[#50C878]',
+        error: 'border-[#FF2400]/50 bg-[#1A0505] text-[#FF2400]',
+        warning: 'border-[#FFD700]/50 bg-[#1A1505] text-[#FFD700]',
       },
     },
     defaultVariants: {
@@ -61,7 +61,7 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      'inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-transparent px-3 text-sm font-medium transition-colors hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-purple-500',
+      'inline-flex h-8 shrink-0 items-center justify-center border border-[#FFD700]/30 bg-transparent px-3 font-retro text-base transition-colors hover:bg-[#FFD700]/10 focus:outline-none focus:ring-2 focus:ring-[#FFD700]',
       className
     )}
     {...props}
@@ -76,7 +76,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      'absolute right-2 top-2 rounded-md p-1 text-zinc-500 opacity-0 transition-opacity hover:text-zinc-300 focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100',
+      'absolute right-2 top-2 rounded-md p-1 text-[#FFD700]/50 opacity-0 transition-opacity hover:text-[#FFD700] focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100',
       className
     )}
     toast-close=""
@@ -91,7 +91,7 @@ const ToastTitle = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Title>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
 >(({ className, ...props }, ref) => (
-  <ToastPrimitives.Title ref={ref} className={cn('text-sm font-semibold', className)} {...props} />
+  <ToastPrimitives.Title ref={ref} className={cn('font-pixel text-[0.6rem] tracking-wider', className)} {...props} />
 ))
 ToastTitle.displayName = ToastPrimitives.Title.displayName
 
@@ -99,7 +99,7 @@ const ToastDescription = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Description>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
 >(({ className, ...props }, ref) => (
-  <ToastPrimitives.Description ref={ref} className={cn('text-sm opacity-90', className)} {...props} />
+  <ToastPrimitives.Description ref={ref} className={cn('font-retro text-sm opacity-90', className)} {...props} />
 ))
 ToastDescription.displayName = ToastPrimitives.Description.displayName
 

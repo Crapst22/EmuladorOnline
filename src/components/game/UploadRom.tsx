@@ -27,11 +27,11 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
   const validateFile = useCallback((f: File) => {
     const ext = '.' + f.name.split('.').pop()?.toLowerCase()
     if (!ALLOWED_ROM_EXTENSIONS.includes(ext)) {
-      toast({ variant: 'error', title: 'Archivo no válido', description: 'Solo se permiten archivos .smc, .sfc, .fig' })
+      toast({ variant: 'error', title: 'ARCHIVO NO VALIDO', description: 'Solo .smc, .sfc, .fig' })
       return false
     }
     if (f.size > MAX_ROM_SIZE) {
-      toast({ variant: 'error', title: 'Archivo muy grande', description: 'Máximo 50MB' })
+      toast({ variant: 'error', title: 'ARCHIVO MUY GRANDE', description: 'Maximo 50MB' })
       return false
     }
     return true
@@ -55,7 +55,7 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      toast({ variant: 'error', title: 'Error', description: 'No autenticado' })
+      toast({ variant: 'error', title: 'ERROR', description: 'No autenticado' })
       setLoading(false)
       return
     }
@@ -68,7 +68,7 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
       .upload(filePath, file)
 
     if (uploadError) {
-      toast({ variant: 'error', title: 'Error al subir', description: uploadError.message })
+      toast({ variant: 'error', title: 'ERROR AL SUBIR', description: uploadError.message })
       setLoading(false)
       return
     }
@@ -82,12 +82,12 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
 
     if (dbError) {
       await supabase.storage.from('roms').remove([filePath])
-      toast({ variant: 'error', title: 'Error', description: 'Error al guardar' })
+      toast({ variant: 'error', title: 'ERROR', description: 'Error al guardar' })
       setLoading(false)
       return
     }
 
-    toast({ variant: 'success', title: 'ROM subida', description: `${title} agregada a tu biblioteca` })
+    toast({ variant: 'success', title: 'ROM SUBIDA', description: `${title} agregada a tu biblioteca` })
     setOpen(false)
     setFile(null)
     setTitle('')
@@ -100,16 +100,16 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Upload className="h-4 w-4" />
-          Subir ROM
+          SUBIR ROM
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Subir ROM</DialogTitle>
+          <DialogTitle>SUBIR ROM</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Nombre del juego</Label>
+            <Label htmlFor="title">NOMBRE DEL JUEGO</Label>
             <Input
               id="title"
               placeholder="Ej: Final Fantasy VI"
@@ -118,8 +118,8 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
             />
           </div>
           <div
-            className={`relative rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
-              dragOver ? 'border-purple-500 bg-purple-500/5' : 'border-zinc-700 hover:border-zinc-600'
+            className={`relative border-2 border-dashed p-8 text-center transition-colors ${
+              dragOver ? 'border-[#FFD700] bg-[#FFD700]/5' : 'border-[#FFD700]/20 hover:border-[#FFD700]/40'
             }`}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
@@ -127,19 +127,19 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
           >
             {file ? (
               <div className="flex items-center justify-center gap-2">
-                <File className="h-5 w-5 text-purple-400" />
-                <span className="text-sm text-zinc-300">{file.name}</span>
-                <button onClick={() => setFile(null)} className="text-zinc-500 hover:text-red-400">
+                <File className="h-5 w-5 text-[#FFD700]" />
+                <span className="font-retro text-base text-[#E0E0E0]">{file.name}</span>
+                <button onClick={() => setFile(null)} className="text-[#808080] hover:text-[#FF2400]">
                   <X className="h-4 w-4" />
                 </button>
               </div>
             ) : (
               <div>
-                <Upload className="mx-auto h-8 w-8 text-zinc-600 mb-2" />
-                <p className="text-sm text-zinc-400">
-                  Arrastra tu ROM aquí o haz clic para seleccionar
+                <Upload className="mx-auto h-8 w-8 text-[#FFD700]/40 mb-2" />
+                <p className="font-retro text-base text-[#A0A0A0]">
+                  Arrastra tu ROM aqui o haz clic para seleccionar
                 </p>
-                <p className="text-xs text-zinc-600 mt-1">.smc, .sfc, .fig (máx 50MB)</p>
+                <p className="font-retro text-sm text-[#808080] mt-1">.smc, .sfc, .fig (max 50MB)</p>
               </div>
             )}
             <input
@@ -150,7 +150,7 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
             />
           </div>
           <Button className="w-full" onClick={handleUpload} disabled={!file || !title.trim() || loading}>
-            {loading ? 'Subiendo...' : 'Subir ROM'}
+            {loading ? 'SUBIR...' : 'SUBIR ROM'}
           </Button>
         </div>
       </DialogContent>

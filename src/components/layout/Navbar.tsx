@@ -25,16 +25,9 @@ export function Navbar() {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
+      const { data } = await supabase.from('users').select('*').eq('id', user.id).single()
       setProfile(data)
     }
-
     loadProfile()
   }, [supabase])
 
@@ -45,50 +38,46 @@ export function Navbar() {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b-2 border-[#FFD700]/20 bg-[#050510]/90">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold text-white">
-          <Gamepad2 className="h-6 w-6 text-purple-500" />
-          <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+        <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold text-white retro-glow">
+          <div className="retro-coin">
+            <Gamepad2 className="h-3 w-3 text-[#050510]" />
+          </div>
+          <span className="font-pixel text-[0.7rem] text-[#FFD700] tracking-wider">
             RetroCloud
           </span>
         </Link>
-
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/dashboard">
               <Home className="h-5 w-5" />
             </Link>
           </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-9 w-9">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-none p-0">
+                <Avatar className="h-9 w-9 rounded-none">
                   <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="bg-purple-600 text-white text-xs">
+                  <AvatarFallback className="rounded-none">
                     {profile?.username?.slice(0, 2).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium text-white">{profile?.username || 'Usuario'}</p>
+              <div className="px-2 py-1.5 border-b border-[#FFD700]/20">
+                <p className="font-pixel text-[0.55rem] text-[#FFD700]">{profile?.username || 'Usuario'}</p>
               </div>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                Perfil
+                <User className="mr-2 h-4 w-4" /> Perfil
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push('/settings')}>
-                <Settings className="mr-2 h-4 w-4" />
-                Configuración
+                <Settings className="mr-2 h-4 w-4" /> Configuraci&oacute;n
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-400 focus:text-red-400">
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar sesión
+              <DropdownMenuItem onClick={handleSignOut} className="text-[#FF2400] focus:text-[#FF2400]">
+                <LogOut className="mr-2 h-4 w-4" /> Cerrar sesi&oacute;n
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

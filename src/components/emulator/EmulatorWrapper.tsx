@@ -6,6 +6,7 @@ import { useSync } from '@/hooks/useSync'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
+import { TouchControls } from './TouchControls'
 import type { Game } from '@/types'
 
 declare global {
@@ -82,12 +83,8 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       const script = document.createElement('script')
       script.src = '/emulatorjs/loader.js'
       script.async = false
-      script.onload = () => {
-        setLoaded(true)
-      }
-      script.onerror = () => {
-        setError('Error al cargar el emulador')
-      }
+      script.onload = () => { setLoaded(true) }
+      script.onerror = () => { setError('Error al cargar el emulador') }
       document.body.appendChild(script)
 
       const checkEmulator = setInterval(() => {
@@ -115,9 +112,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       const emu = (window as any).EJS_emulator
       if (emu) {
         emu.saveSettings?.()
-        if (emu.destroy) {
-          emu.destroy()
-        }
+        if (emu.destroy) emu.destroy()
       }
       emulatorRef.current = null
       initialized.current = false
@@ -126,10 +121,10 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96 text-red-400">
-        <div className="text-center">
-          <p className="text-lg mb-2">{error}</p>
-          <p className="text-sm text-zinc-500">Asegúrate de que EmulatorJS está en public/emulatorjs/</p>
+      <div className="flex items-center justify-center h-96">
+        <div className="retro-panel p-8 text-center">
+          <p className="font-pixel text-[0.7rem] text-[#FF2400] mb-2">{error}</p>
+          <p className="font-retro text-sm text-[#808080]">Asegurate de que EmulatorJS esta en public/emulatorjs/</p>
         </div>
       </div>
     )
@@ -138,26 +133,48 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   return (
     <div className="relative flex flex-col items-center">
       <div className="w-full max-w-3xl">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold text-white">{game.title}</h2>
+        {/* SNES Console top bar */}
+        <div className="retro-panel p-3 mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-[#50C878] rounded-full shadow-[0_0_4px_rgba(80,200,120,0.5)]" />
+            <h2 className="font-pixel text-[0.55rem] text-[#FFD700] tracking-wider truncate max-w-[200px]">
+              {game.title}
+            </h2>
+          </div>
           <div className="flex items-center gap-3">
             {gamepadConnected && (
-              <span className="text-xs text-green-400">Gamepad conectado</span>
+              <span className="font-pixel text-[0.4rem] text-[#50C878] retro-radar">
+                <div className="retro-radar-dot" />
+                GAMEPAD
+              </span>
             )}
             <SyncIndicator status={syncStatus} />
           </div>
         </div>
-
-        <div className="w-full bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl min-h-[400px]">
-          <div id="game-emulator" />
+        {/* Console frame */}
+        <div className="retro-panel p-1">
+          <div className="bg-black border-2 border-[#FFD700]/20">
+            <div id="game-emulator" className="min-h-[400px]" />
+          </div>
         </div>
-
+        {/* Controls bar */}
+        <div className="retro-panel-dark p-3 mt-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-[#FF2400] rounded-full animate-pulse" />
+            <span className="font-pixel text-[0.4rem] text-[#808080]">SNES9X</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-pixel text-[0.4rem] text-[#808080]">RETROCLOUD</span>
+            <div className="retro-clock" />
+          </div>
+        </div>
         {!loaded && (
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+            <div className="retro-spinner" />
           </div>
         )}
       </div>
+      <TouchControls />
     </div>
   )
 }

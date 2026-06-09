@@ -6,7 +6,6 @@ import { STORAGE_BUCKETS } from '@/lib/constants'
 export default async function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createServerSupabaseClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
@@ -16,7 +15,6 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
     .eq('id', id)
     .eq('owner_id', user.id)
     .single()
-
   if (!game) redirect('/dashboard')
 
   const { data: urlData } = await supabase.storage
@@ -26,13 +24,15 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
   if (!urlData?.signedUrl) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-red-400">Error al cargar la ROM</p>
+        <div className="retro-panel p-8">
+          <p className="font-pixel text-[0.7rem] text-[#FF2400]">ERROR AL CARGAR LA ROM</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 pb-32 md:pb-0">
+    <div className="min-h-screen pb-32 md:pb-0">
       <div className="mx-auto max-w-4xl px-4 py-4">
         <EmulatorWrapper game={game} romUrl={urlData.signedUrl} />
       </div>

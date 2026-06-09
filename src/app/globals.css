@@ -1,68 +1,617 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: #09090b;
-    --foreground: #f4f4f5;
-  }
+@theme {
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-retro: 'VT323', monospace;
+  --font-sans: 'VT323', monospace;
 
+  --color-retro-gold: #FFD700;
+  --color-retro-gold-dark: #B8960F;
+  --color-retro-yellow: #FFE44D;
+  --color-retro-blue: #4169E1;
+  --color-retro-blue-light: #5B8DEF;
+  --color-retro-blue-dark: #0A0A2E;
+  --color-retro-blue-deep: #050510;
+  --color-retro-gray: #808080;
+  --color-retro-gray-light: #A0A0A0;
+  --color-retro-emerald: #50C878;
+  --color-retro-red: #FF2400;
+  --color-retro-purple: #301934;
+  --color-retro-purple-light: #6B3FA0;
+}
+
+@layer base {
   * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
     scrollbar-width: thin;
-    scrollbar-color: #27272a transparent;
+    scrollbar-color: #FFD700 #050510;
   }
 
-  *::-webkit-scrollbar {
-    width: 6px;
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #050510; }
+  ::-webkit-scrollbar-thumb {
+    background: #FFD700;
+    border: 1px solid #B8960F;
   }
+  ::-webkit-scrollbar-thumb:hover { background: #FFE44D; }
 
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  *::-webkit-scrollbar-thumb {
-    background-color: #27272a;
-    border-radius: 3px;
-  }
-}
-
-@layer base {
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-family: system-ui, -apple-system, sans-serif;
+    background-color: var(--color-retro-blue-deep);
+    color: #E0E0E0;
+    font-family: 'VT323', monospace;
+    font-size: 1.125rem;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: #FFD700;
+    color: #050510;
   }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+/* Space parallax background layers */
+.stars-layer-1 {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(1px 1px at 10% 20%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 30% 45%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 50% 10%, #fff 100%, transparent),
+    radial-gradient(1.5px 1.5px at 70% 60%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 85% 30%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 15% 70%, #fff 100%, transparent),
+    radial-gradient(1.5px 1.5px at 60% 80%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 40% 90%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 90% 15%, #fff 100%, transparent),
+    radial-gradient(1.5px 1.5px at 25% 55%, #fff 100%, transparent);
+  background-size: 200px 200px;
+  animation: parallax-stars 60s linear infinite;
+  opacity: 0.8;
 }
 
-@keyframes neon-pulse {
-  0%, 100% { box-shadow: 0 0 5px rgba(168, 85, 247, 0.5), 0 0 10px rgba(168, 85, 247, 0.3); }
-  50% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.5); }
+.stars-layer-2 {
+  position: fixed;
+  inset: 0;
+  z-index: -4;
+  background:
+    radial-gradient(1.5px 1.5px at 5% 15%, #FFD700 100%, transparent),
+    radial-gradient(2px 2px at 20% 35%, #4169E1 100%, transparent),
+    radial-gradient(1.5px 1.5px at 40% 5%, #FFE44D 100%, transparent),
+    radial-gradient(2px 2px at 55% 40%, #FFD700 100%, transparent),
+    radial-gradient(1.5px 1.5px at 75% 15%, #4169E1 100%, transparent),
+    radial-gradient(2px 2px at 90% 50%, #FFE44D 100%, transparent),
+    radial-gradient(1.5px 1.5px at 10% 80%, #FFD700 100%, transparent),
+    radial-gradient(2px 2px at 45% 65%, #4169E1 100%, transparent),
+    radial-gradient(1.5px 1.5px at 65% 90%, #FFE44D 100%, transparent),
+    radial-gradient(2px 2px at 80% 70%, #FFD700 100%, transparent);
+  background-size: 300px 300px;
+  animation: parallax-stars 90s linear infinite reverse;
+  opacity: 0.5;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+.stars-layer-3 {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  background:
+    radial-gradient(0.5px 0.5px at 3% 8%, rgba(255,255,255,0.6) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 12% 25%, rgba(255,255,255,0.4) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 22% 48%, rgba(255,255,255,0.6) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 35% 12%, rgba(255,255,255,0.4) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 48% 32%, rgba(255,255,255,0.6) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 58% 72%, rgba(255,255,255,0.4) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 68% 18%, rgba(255,255,255,0.6) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 78% 58%, rgba(255,255,255,0.4) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 88% 82%, rgba(255,255,255,0.6) 100%, transparent),
+    radial-gradient(0.5px 0.5px at 95% 38%, rgba(255,255,255,0.4) 100%, transparent);
+  background-size: 150px 150px;
+  animation: parallax-stars 40s linear infinite;
+  opacity: 0.9;
 }
 
-.animate-neon-pulse {
-  animation: neon-pulse 2s ease-in-out infinite;
+.nebula {
+  position: fixed;
+  inset: 0;
+  z-index: -6;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(48, 25, 52, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(65, 105, 225, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(80, 200, 120, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 40%, rgba(255, 215, 0, 0.08) 0%, transparent 40%);
+  background-color: #050510;
 }
 
-.glass {
-  background: rgba(24, 24, 27, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(63, 63, 70, 0.3);
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
 }
 
-.game-card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.6) 100%);
 }
 
-.game-card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(168, 85, 247, 0.15);
-  border-color: rgba(168, 85, 247, 0.3);
+/* Retro panel with beveled border */
+.retro-panel {
+  background: linear-gradient(135deg, rgba(10, 10, 46, 0.95), rgba(5, 5, 16, 0.95));
+  border: 2px solid #FFD700;
+  box-shadow:
+    inset 0 0 15px rgba(255, 215, 0, 0.1),
+    0 0 10px rgba(255, 215, 0, 0.15),
+    2px 2px 0px #B8960F,
+    -1px -1px 0px rgba(255, 228, 77, 0.3);
+  position: relative;
+}
+
+.retro-panel::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  pointer-events: none;
+}
+
+.retro-panel-dark {
+  background: linear-gradient(135deg, rgba(5, 5, 16, 0.98), rgba(10, 10, 30, 0.98));
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  box-shadow:
+    inset 0 0 10px rgba(0, 0, 0, 0.5),
+    0 0 5px rgba(255, 215, 0, 0.05);
+}
+
+/* Retro button with physical feel */
+.retro-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #FFD700 0%, #B8960F 100%);
+  color: #050510;
+  border: 2px solid #FFE44D;
+  padding: 0.75rem 1.5rem;
+  position: relative;
+  cursor: pointer;
+  box-shadow:
+    0 3px 0px #7A6A00,
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+  transition: all 0.1s ease;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.retro-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 0px #7A6A00,
+    0 6px 12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.retro-btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 0px 0px #7A6A00,
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.retro-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow:
+    0 3px 0px #7A6A00,
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.retro-btn-secondary {
+  background: linear-gradient(180deg, #4169E1 0%, #1a3a8a 100%);
+  color: #fff;
+  border-color: #5B8DEF;
+  box-shadow:
+    0 3px 0px #0f2060,
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.retro-btn-secondary:hover {
+  box-shadow:
+    0 4px 0px #0f2060,
+    0 6px 12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 15px rgba(65, 105, 225, 0.3);
+}
+
+.retro-btn-danger {
+  background: linear-gradient(180deg, #FF2400 0%, #8B0000 100%);
+  color: #fff;
+  border-color: #FF4444;
+  box-shadow:
+    0 3px 0px #5C0000,
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.retro-btn-danger:hover {
+  box-shadow:
+    0 4px 0px #5C0000,
+    0 6px 12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 15px rgba(255, 36, 0, 0.3);
+}
+
+.retro-btn-sm {
+  font-size: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.retro-btn-lg {
+  font-size: 0.75rem;
+  padding: 1rem 2rem;
+}
+
+/* Retro input field */
+.retro-input {
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  background: rgba(5, 5, 16, 0.9);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  color: #FFD700;
+  padding: 0.625rem 0.75rem;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.retro-input:focus {
+  border-color: #FFD700;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 0 8px rgba(255, 215, 0, 0.2);
+}
+
+.retro-input::placeholder {
+  color: rgba(255, 215, 0, 0.3);
+}
+
+/* Retro link */
+.retro-link {
+  color: #FFD700;
+  text-decoration: none;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.retro-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: #FFD700;
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.retro-link:hover {
+  color: #FFE44D;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.retro-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* Glow effects */
+.retro-glow {
+  animation: retro-glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes retro-glow-pulse {
+  0%, 100% { text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+  50% { text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.2); }
+}
+
+@keyframes parallax-stars {
+  from { transform: translateY(0); }
+  to { transform: translateY(-200px); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-flicker {
+  animation: flicker 0.15s ease-in-out 3;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out forwards;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 2s ease-in-out infinite;
+}
+
+/* Zelda-inspired triangle decorations */
+.retro-triangles {
+  position: relative;
+}
+
+.retro-triangles::before,
+.retro-triangles::after {
+  content: '\25B2';
+  font-size: 0.5rem;
+  color: #FFD700;
+  position: absolute;
+  opacity: 0.3;
+}
+
+.retro-triangles::before {
+  top: -8px;
+  left: 8px;
+}
+
+.retro-triangles::after {
+  bottom: -8px;
+  right: 8px;
+  transform: rotate(180deg);
+}
+
+/* Mario-inspired coin decoration */
+.retro-coin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: 1px solid #FFE44D;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+  font-size: 0.625rem;
+  animation: bounce-soft 2s ease-in-out infinite;
+}
+
+/* Corner decorations */
+.retro-corner-tl,
+.retro-corner-tr,
+.retro-corner-bl,
+.retro-corner-br {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: #FFD700;
+  opacity: 0.5;
+}
+
+.retro-corner-tl {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+
+.retro-corner-tr {
+  top: -1px;
+  right: -1px;
+  border-top: 2px solid;
+  border-right: 2px solid;
+}
+
+.retro-corner-bl {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 2px solid;
+  border-left: 2px solid;
+}
+
+.retro-corner-br {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+}
+
+/* DKC-inspired wood texture */
+.retro-wood {
+  background:
+    linear-gradient(90deg, rgba(80, 50, 20, 0.3) 1px, transparent 1px),
+    linear-gradient(rgba(80, 50, 20, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Tech panel (Mega Man X inspired) */
+.retro-tech-panel {
+  background: linear-gradient(180deg, rgba(65, 105, 225, 0.1), rgba(10, 10, 46, 0.3));
+  border: 1px solid rgba(65, 105, 225, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.retro-tech-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4169E1, transparent);
+  animation: shimmer 3s linear infinite;
+  background-size: 200% 100%;
+}
+
+/* F-Zero inspired speed lines */
+.retro-speed-lines {
+  position: relative;
+  overflow: hidden;
+}
+
+.retro-speed-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 20px,
+    rgba(255, 215, 0, 0.03) 20px,
+    rgba(255, 215, 0, 0.03) 21px
+  );
+  pointer-events: none;
+}
+
+/* Star Fox inspired radar dots */
+.retro-radar {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.retro-radar-dot {
+  width: 4px;
+  height: 4px;
+  background: #FFD700;
+  border-radius: 50%;
+  box-shadow: 0 0 3px rgba(255, 215, 0, 0.5);
+}
+
+.retro-radar-dot:nth-child(2) { animation: bounce-soft 1.5s ease-in-out infinite 0.3s; }
+.retro-radar-dot:nth-child(3) { animation: bounce-soft 1.5s ease-in-out infinite 0.6s; }
+
+/* Chrono Trigger inspired clock */
+.retro-clock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border: 1.5px solid #FFD700;
+  border-radius: 50%;
+  position: relative;
+}
+
+.retro-clock::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 1px;
+  background: #FFD700;
+  transform-origin: left center;
+  animation: spin-slow 4s linear infinite;
+}
+
+/* Loading spinner retro */
+.retro-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 215, 0, 0.15);
+  border-top: 3px solid #FFD700;
+  border-radius: 50%;
+  animation: spin-slow 1s linear infinite;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+}
+
+/* Staggered animation for cards */
+.stagger-enter {
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.stagger-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes glow-border {
+  0%, 100% { border-color: rgba(255, 215, 0, 0.2); }
+  50% { border-color: rgba(255, 215, 0, 0.5); }
+}
+
+/* Nintendo Switch / SNES inspired card grid pulse */
+@keyframes card-pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.05); }
+  50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.12); }
 }

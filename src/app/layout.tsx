@@ -14,7 +14,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="dark">
-      <body className="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+      <body className="min-h-screen font-retro text-zinc-100 antialiased">
+        <div className="stars-layer-3" />
+        <div className="nebula" />
+        <div className="stars-layer-1" />
+        <div className="stars-layer-2" />
+        <div className="scanlines" />
+        <div className="vignette" />
         {children}
         <Toaster />
       </body>

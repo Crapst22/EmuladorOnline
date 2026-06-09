@@ -9,10 +9,10 @@ interface SyncIndicatorProps {
 }
 
 const config: Record<SyncStatus, { icon: typeof Cloud; label: string; color: string }> = {
-  synced: { icon: CheckCircle2, label: 'Sincronizado', color: 'text-green-400' },
-  saving: { icon: Loader2, label: 'Guardando...', color: 'text-blue-400' },
-  error: { icon: AlertTriangle, label: 'Error al guardar', color: 'text-red-400' },
-  offline: { icon: CloudOff, label: 'Sin conexión', color: 'text-yellow-400' },
+  synced: { icon: CheckCircle2, label: 'SINCRONIZADO', color: 'text-[#50C878]' },
+  saving: { icon: Loader2, label: 'GURDANDO...', color: 'text-[#4169E1]' },
+  error: { icon: AlertTriangle, label: 'ERROR AL GUARDAR', color: 'text-[#FF2400]' },
+  offline: { icon: CloudOff, label: 'SIN CONEXION', color: 'text-[#FFD700]' },
 }
 
 export function SyncIndicator({ status }: SyncIndicatorProps) {
@@ -20,7 +20,7 @@ export function SyncIndicator({ status }: SyncIndicatorProps) {
 
   return (
     <motion.div
-      className={`flex items-center gap-1.5 text-xs ${color}`}
+      className={`flex items-center gap-1.5 font-pixel text-[0.4rem] tracking-wider ${color}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       key={status}

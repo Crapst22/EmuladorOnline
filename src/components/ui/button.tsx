@@ -4,21 +4,21 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95',
+  'inline-flex items-center justify-center whitespace-nowrap font-pixel text-[0.625rem] tracking-wider uppercase transition-all duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050510] disabled:pointer-events-none disabled:opacity-40',
   {
     variants: {
       variant: {
-        default: 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-500/25',
-        destructive: 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/25',
-        outline: 'border border-purple-500/30 bg-transparent text-white hover:bg-purple-500/10',
-        secondary: 'bg-zinc-800 text-white hover:bg-zinc-700',
-        ghost: 'text-zinc-400 hover:text-white hover:bg-zinc-800',
-        link: 'text-purple-400 underline-offset-4 hover:underline',
+        default: 'retro-btn',
+        destructive: 'retro-btn retro-btn-danger',
+        outline: 'bg-transparent border-2 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/60 shadow-none',
+        secondary: 'retro-btn retro-btn-secondary',
+        ghost: 'bg-transparent text-[#FFD700]/60 hover:text-[#FFD700] hover:bg-[#FFD700]/5 border-none shadow-none',
+        link: 'text-[#FFD700] underline-offset-4 hover:underline hover:text-[#FFE44D]',
       },
       size: {
         default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3 text-xs',
-        lg: 'h-11 rounded-lg px-8 text-base',
+        sm: 'h-9 rounded-md px-3 text-[0.5rem]',
+        lg: 'h-12 px-8 text-[0.75rem]',
         icon: 'h-10 w-10',
       },
     },

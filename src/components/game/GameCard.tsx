@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Trash2, Play, Edit3 } from 'lucide-react'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
@@ -30,33 +30,28 @@ export function GameCard({ game, onDelete, onRename, index }: GameCardProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
     >
-      <Card className="game-card-hover group cursor-pointer border-zinc-800/50 overflow-hidden" onClick={() => router.push(`/play/${game.id}`)}>
-        <div className="aspect-video bg-gradient-to-br from-purple-900/20 to-blue-900/20 flex items-center justify-center relative">
+      <Card
+        className="group cursor-pointer border-[#FFD700]/20 hover:border-[#FFD700]/50 transition-all duration-200 hover:translate-y-[-3px]"
+        onClick={() => router.push(`/play/${game.id}`)}
+      >
+        <div className="aspect-video bg-gradient-to-br from-[#301934] to-[#0A0A2E] flex items-center justify-center relative">
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-16 w-16 rounded-2xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center">
-              <Play className="h-8 w-8 text-purple-400 ml-1" />
+            <div className="h-16 w-16 border-2 border-[#FFD700]/30 bg-[#050510]/50 flex items-center justify-center group-hover:bg-[#FFD700]/10 group-hover:border-[#FFD700]/60 transition-all">
+              <Play className="h-8 w-8 text-[#FFD700] ml-1" />
             </div>
           </div>
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1"
             onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 bg-black/50 hover:bg-black/70"
-              onClick={() => setIsEditing(!isEditing)}
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#050510] border border-[#FFD700]/20 rounded-none"
+              onClick={() => setIsEditing(!isEditing)}>
               <Edit3 className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 bg-black/50 hover:bg-red-500/20 hover:text-red-400"
-              onClick={() => onDelete(game.id)}
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
+              onClick={() => onDelete(game.id)}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -64,24 +59,19 @@ export function GameCard({ game, onDelete, onRename, index }: GameCardProps) {
         <CardContent className="p-3">
           {isEditing ? (
             <div onClick={(e) => e.stopPropagation()}>
-              <Input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleRename()
-                  if (e.key === 'Escape') setIsEditing(false)
-                }}
-                onBlur={handleRename}
-                className="h-8 text-sm"
-                autoFocus
-              />
+              <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setIsEditing(false) }}
+                onBlur={handleRename} className="h-8 text-sm rounded-none" autoFocus />
             </div>
           ) : (
-            <h3 className="font-medium text-sm text-white truncate">{game.title}</h3>
+            <h3 className="font-pixel text-[0.5rem] text-[#E0E0E0] leading-relaxed truncate">{game.title}</h3>
           )}
-          <p className="text-xs text-zinc-500 mt-1">
-            SNES
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="retro-radar">
+              <div className="retro-radar-dot" />
+            </div>
+            <p className="font-retro text-sm text-[#808080]">SNES</p>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
