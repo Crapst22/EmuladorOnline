@@ -6,7 +6,6 @@ import { useSync } from '@/hooks/useSync'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
-import { TouchControls } from './TouchControls'
 import { createClient } from '@/lib/supabase/client'
 import type { Game } from '@/types'
 
@@ -194,7 +193,6 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           </div>
         )}
       </div>
-      <TouchControls />
     </div>
   )
 }
