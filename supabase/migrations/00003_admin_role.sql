@@ -1,6 +1,12 @@
 -- Add admin role to users
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
 
+-- Allow all authenticated users to view all user profiles
+DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
+CREATE POLICY "Users can view all profiles"
+  ON public.users FOR SELECT
+  USING (auth.role() = 'authenticated');
+
 -- Allow all authenticated users to view all games
 DROP POLICY IF EXISTS "Users can view own games" ON public.games;
 CREATE POLICY "Users can view all games"

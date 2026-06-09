@@ -40,7 +40,7 @@ export function AllGamesList() {
 
     const { data } = await supabase
       .from('games')
-      .select('*, users!inner(username)')
+      .select('*, users(username)')
       .order('updated_at', { ascending: false })
 
     if (data) {
@@ -151,15 +151,13 @@ export function AllGamesList() {
                       </Button>
                     </div>
                   )}
-                  {game.owner_id === game.owner_username ? null : (
-                    <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => e.stopPropagation()}>
-                      <span className="flex items-center gap-1 px-2 py-0.5 bg-[#050510]/80 border border-[#FFD700]/20 text-[0.5rem] font-retro text-[#A0A0A0]">
-                        <User className="h-3 w-3" />
-                        {game.owner_username}
-                      </span>
-                    </div>
-                  )}
+                  <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}>
+                    <span className="flex items-center gap-1 px-2 py-0.5 bg-[#050510]/80 border border-[#FFD700]/20 text-[0.5rem] font-retro text-[#A0A0A0]">
+                      <User className="h-3 w-3" />
+                      {game.owner_username}
+                    </span>
+                  </div>
                 </div>
                 <CardContent className="p-3">
                   {editingId === game.id ? (
