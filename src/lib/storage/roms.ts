@@ -29,6 +29,16 @@ export async function uploadRom(formData: FormData) {
     return { error: 'Tipo de archivo no permitido. Use: .smc, .sfc, .fig' }
   }
 
+  const { data: existing } = await supabase
+    .from('games')
+    .select('title')
+    .ilike('title', title)
+    .limit(1)
+
+  if (existing && existing.length > 0) {
+    return { error: 'Ese juego ya existe en la plataforma. Fijate en la pantalla de Juegos Cargados.' }
+  }
+
   const filePath = `${user.id}/${crypto.randomUUID()}${extension}`
 
   const { error: uploadError } = await supabase.storage

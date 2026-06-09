@@ -60,6 +60,22 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
       return
     }
 
+    const { data: existing } = await supabase
+      .from('games')
+      .select('title')
+      .ilike('title', title.trim())
+      .limit(1)
+
+    if (existing && existing.length > 0) {
+      toast({
+        variant: 'warning',
+        title: 'JUEGO YA CARGADO',
+        description: 'Ese juego ya existe en la plataforma. Fijate en la pantalla de Juegos Cargados.',
+      })
+      setLoading(false)
+      return
+    }
+
     const ext = '.' + file.name.split('.').pop()?.toLowerCase()
     const filePath = `${user.id}/${crypto.randomUUID()}${ext}`
 
