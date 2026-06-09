@@ -7,6 +7,7 @@ import { useAutoSave } from '@/hooks/useAutoSave'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
 import { TouchControls } from './TouchControls'
+import { createClient } from '@/lib/supabase/client'
 import type { Game } from '@/types'
 
 declare global {
@@ -34,6 +35,8 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   const router = useRouter()
   const initialized = useRef(false)
   const emulatorRef = useRef<any>(null)
+  const sessionIdRef = useRef<string | null>(null)
+  const supabaseRef = useRef(createClient())
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
   const { syncStatus, uploadSave, downloadLatestSave } = useSync(game.id)
@@ -83,7 +86,18 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       const script = document.createElement('script')
       script.src = '/emulatorjs/loader.js'
       script.async = false
-      script.onload = () => { setLoaded(true) }
+      script.onload = async () => {
+        setLoaded(true)
+        const { data: { user } } = await supabaseRef.current.auth.getUser()
+        if (user) {
+          const { data: sessionData } = await supabaseRef.current
+            .from('play_sessions')
+            .insert({ user_id: user.id, game_id: game.id, started_at: new Date().toISOString() })
+            .select('id')
+            .single()
+          if (sessionData) sessionIdRef.current = sessionData.id
+        }
+      }
       script.onerror = () => { setError('Error al cargar el emulador') }
       document.body.appendChild(script)
 
@@ -91,8 +105,11 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         const emu = (window as any).EJS_emulator
         if (emu) {
           emulatorRef.current = emu
-          emu.on('exit', () => {
+          emu.on('exit', async () => {
             emu.saveSettings?.()
+            if (sessionIdRef.current) {
+              await supabaseRef.current.from('play_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionIdRef.current)
+            }
             router.push('/dashboard')
           })
           clearInterval(checkEmulator)
@@ -102,6 +119,9 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       const saveOnUnload = () => {
         const emu = (window as any).EJS_emulator
         emu?.saveSettings?.()
+        if (sessionIdRef.current) {
+          supabaseRef.current.from('play_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionIdRef.current).then()
+        }
       }
       window.addEventListener('beforeunload', saveOnUnload)
       cleanups.push(() => window.removeEventListener('beforeunload', saveOnUnload))

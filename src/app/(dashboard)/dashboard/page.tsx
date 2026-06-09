@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 interface DashboardStats {
   gameCount: number
   totalMinutes: number
-  lastSession: string | null
+  lastSession: { started_at: string; game_title: string } | null
 }
 
 export default function DashboardPage() {
@@ -21,11 +21,11 @@ export default function DashboardPage() {
 
       const [{ count: gameCount }, { data: sessions }] = await Promise.all([
         supabase.from('games').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
-        supabase.from('play_sessions').select('started_at, ended_at').eq('user_id', user.id).order('started_at', { ascending: false }),
+        supabase.from('play_sessions').select('started_at, ended_at, games:game_id(title)').eq('user_id', user.id).order('started_at', { ascending: false }),
       ])
 
       let totalMinutes = 0
-      let lastSession: string | null = null
+      let lastSession: DashboardStats['lastSession'] = null
 
       if (sessions) {
         for (const s of sessions) {
@@ -34,8 +34,11 @@ export default function DashboardPage() {
             totalMinutes += Math.floor(diff / 60000)
           }
         }
-        if (sessions.length > 0 && sessions[0].started_at) {
-          lastSession = sessions[0].started_at
+        const first = sessions[0]
+        if (first?.started_at) {
+          const gameInfo = first.games as { title: string }[] | null
+          const gameTitle = gameInfo?.[0]?.title || 'Juego'
+          lastSession = { started_at: first.started_at, game_title: gameTitle }
         }
       }
 
@@ -51,10 +54,11 @@ export default function DashboardPage() {
     return `${h}h ${m}m`
   }
 
-  function formatLastSession(dateStr: string | null): string {
-    if (!dateStr) return '-'
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  function formatLastSession(session: DashboardStats['lastSession']): string {
+    if (!session) return '-'
+    const d = new Date(session.started_at)
+    const date = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    return `${session.game_title} - ${date}`
   }
 
   return (
@@ -93,7 +97,7 @@ export default function DashboardPage() {
           <div className="retro-corner-bl" />
           <div className="retro-corner-br" />
           <p className="font-pixel text-[0.5rem] text-[#808080] tracking-wider mb-1">{'\u2605'} ULTIMA SESION</p>
-          <p className="font-pixel text-[1.2rem] text-[#FFD700]">{formatLastSession(stats.lastSession)}</p>
+          <p className="font-pixel text-[0.55rem] text-[#FFD700] leading-relaxed">{formatLastSession(stats.lastSession)}</p>
         </div>
       </div>
       <GameList />
