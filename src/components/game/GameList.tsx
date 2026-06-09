@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Gamepad2, Search } from 'lucide-react'
+import { Gamepad2, Search, Download } from 'lucide-react'
+import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { GameCard } from './GameCard'
 import { UploadRom } from './UploadRom'
+import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { Game } from '@/types'
 import { motion } from 'framer-motion'
@@ -80,7 +82,15 @@ export function GameList() {
         <p className="font-retro text-base text-[#A0A0A0] mb-6 max-w-sm">
           Sube tus ROMs de Super Nintendo para empezar a jugar desde cualquier dispositivo
         </p>
-        <UploadRom onUploadComplete={loadGames} />
+        <div className="flex gap-2">
+          <Link href="/juegos">
+            <Button variant="outline" className="gap-2 border-[#FFD700]/20 text-[#FFD700] hover:bg-[#FFD700]/10">
+              <Download className="h-4 w-4" />
+              JUEGOS CARGADOS
+            </Button>
+          </Link>
+          <UploadRom onUploadComplete={loadGames} />
+        </div>
       </motion.div>
     )
   }
@@ -92,7 +102,15 @@ export function GameList() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#FFD700]/40" />
           <Input placeholder="BUSCAR JUEGOS..." className="!pl-12" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <UploadRom onUploadComplete={loadGames} />
+        <div className="flex gap-2">
+          <Link href="/juegos">
+            <Button variant="outline" className="gap-2 border-[#FFD700]/20 text-[#FFD700] hover:bg-[#FFD700]/10">
+              <Download className="h-4 w-4" />
+              JUEGOS CARGADOS
+            </Button>
+          </Link>
+          <UploadRom onUploadComplete={loadGames} />
+        </div>
       </div>
       {filtered.length === 0 ? (
         <div className="text-center py-12 font-retro text-lg text-[#808080]">
