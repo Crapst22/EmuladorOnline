@@ -9,7 +9,7 @@ import { UploadRom } from './UploadRom'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { archiveGame, removePlaySessions } from '@/lib/storage/roms'
+import * as roms from '@/lib/storage/roms'
 import type { Game } from '@/types'
 import { motion } from 'framer-motion'
 
@@ -22,45 +22,15 @@ export function GameList() {
   const supabase = createClient()
 
   const loadGames = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setLoading(false); return }
-    setUserId(user.id)
-
-    const { data: ownedGames } = await supabase
-      .from('games')
-      .select('*')
-      .eq('owner_id', user.id)
-      .eq('archived', false)
-      .order('updated_at', { ascending: false })
-
-    const { data: sessions } = await supabase
-      .from('play_sessions')
-      .select('game_id')
-      .eq('user_id', user.id)
-
-    const playedIds = [...new Set(sessions?.map(s => s.game_id) || [])]
-
-    let playedGames: Game[] = []
-    if (playedIds.length > 0) {
-      const { data } = await supabase
-        .from('games')
-        .select('*')
-        .in('id', playedIds)
-        .order('updated_at', { ascending: false })
-      playedGames = data || []
+    const result = await roms.getDashboardGames()
+    if (result?.userId) {
+      setUserId(result.userId)
     }
-
-    const merged = [...(ownedGames || [])]
-    const seenIds = new Set(merged.map(g => g.id))
-    for (const g of playedGames) {
-      if (!seenIds.has(g.id)) {
-        merged.push(g)
-        seenIds.add(g.id)
-      }
+    if (result?.games) {
+      setGames(result.games)
     }
-    setGames(merged)
     setLoading(false)
-  }, [supabase])
+  }, [])
 
   useEffect(() => { loadGames() }, [loadGames])
 
@@ -72,16 +42,15 @@ export function GameList() {
       toast({ variant: 'error', title: 'ERROR', description: 'No se encontró el juego' })
       return
     }
-    toast({ variant: 'default', title: 'DEBUG', description: `owner:${game.owner_id?.substring(0,8)} user:${user.id.substring(0,8)} match:${game.owner_id === user.id ? 'SI' : 'NO'}` })
     if (game.owner_id === user.id) {
-      const result = await archiveGame(id)
+      const result = await roms.archiveGame(id)
       if (result?.error) {
         toast({ variant: 'error', title: 'ERROR AL ARCHIVAR', description: result.error })
         return
       }
       toast({ variant: 'success', title: 'ARCHIVADO', description: `${game.title} archivado de tu biblioteca` })
     } else {
-      const result = await removePlaySessions(id)
+      const result = await roms.removePlaySessions(id)
       if (result?.error) {
         toast({ variant: 'error', title: 'ERROR', description: result.error })
         return
@@ -92,7 +61,7 @@ export function GameList() {
   }
 
   const handleRename = async (id: string, title: string) => {
-    await supabase.from('games').update({ title }).eq('id', id)
+    await roms.renameRom(id, title)
     loadGames()
   }
 

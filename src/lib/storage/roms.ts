@@ -5,6 +5,7 @@ import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/con
 import { cleanupOldSaves } from '@/lib/storage/saves'
 import { revalidatePath } from 'next/cache'
 import crypto from 'crypto'
+import type { Game } from '@/types'
 
 export async function uploadRom(formData: FormData) {
   const supabase = await createServerSupabaseClient()
@@ -316,6 +317,53 @@ export async function archiveGame(gameId: string) {
   return { success: true }
 }
 
+export async function getDashboardGames() {
+  const supabase = await createServerSupabaseClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado', games: [], userId: null }
+
+  const [ownedResult, sessionsResult] = await Promise.all([
+    supabase
+      .from('games')
+      .select('*')
+      .eq('owner_id', user.id)
+      .eq('archived', false)
+      .order('updated_at', { ascending: false }),
+    supabase
+      .from('play_sessions')
+      .select('game_id')
+      .eq('user_id', user.id),
+  ])
+
+  const ownedGames = ownedResult.data || []
+  const sessions = sessionsResult.data || []
+  const playedIds = [...new Set(sessions.map(s => s.game_id))]
+
+  let playedGames: Game[] = []
+  if (playedIds.length > 0) {
+    const { data } = await supabase
+      .from('games')
+      .select('*')
+      .in('id', playedIds)
+      .order('updated_at', { ascending: false })
+    playedGames = data || []
+  }
+
+  const merged = [...ownedGames]
+  const seenIds = new Set(merged.map(g => g.id))
+  for (const g of playedGames) {
+    if (!seenIds.has(g.id)) {
+      merged.push(g)
+      seenIds.add(g.id)
+    }
+  }
+
+  return { games: merged, userId: user.id }
+}
+
 export async function removePlaySessions(gameId: string) {
   const supabase = await createServerSupabaseClient()
 
@@ -323,6 +371,12 @@ export async function removePlaySessions(gameId: string) {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
+
+  const { count: before } = await supabase
+    .from('play_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('game_id', gameId)
+    .eq('user_id', user.id)
 
   const { error } = await supabase
     .from('play_sessions')
@@ -332,6 +386,16 @@ export async function removePlaySessions(gameId: string) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/dashboard')
-  return { success: true }
+  const { count: after } = await supabase
+    .from('play_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('game_id', gameId)
+    .eq('user_id', user.id)
+
+  if (before && after && before > after) {
+    revalidatePath('/dashboard')
+    return { success: true, deleted: before - after }
+  }
+
+  return { error: `No se eliminaron sesiones (antes: ${before}, despues: ${after})` }
 }
