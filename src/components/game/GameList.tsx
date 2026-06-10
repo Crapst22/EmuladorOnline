@@ -23,6 +23,13 @@ export function GameList() {
     if (!user) { setLoading(false); return }
     setUserId(user.id)
 
+    const { data: ownedGames } = await supabase
+      .from('games')
+      .select('*')
+      .eq('owner_id', user.id)
+      .eq('archived', false)
+      .order('updated_at', { ascending: false })
+
     const { data: sessions } = await supabase
       .from('play_sessions')
       .select('game_id')
@@ -30,16 +37,25 @@ export function GameList() {
 
     const playedIds = [...new Set(sessions?.map(s => s.game_id) || [])]
 
-    let query = supabase.from('games').select('*').order('updated_at', { ascending: false })
-
+    let playedGames: Game[] = []
     if (playedIds.length > 0) {
-      query = query.or(`owner_id.eq.${user.id},id.in.(${playedIds.join(',')})`)
-    } else {
-      query = query.eq('owner_id', user.id)
+      const { data } = await supabase
+        .from('games')
+        .select('*')
+        .in('id', playedIds)
+        .order('updated_at', { ascending: false })
+      playedGames = data || []
     }
 
-    const { data } = await query
-    setGames(data || [])
+    const merged = [...(ownedGames || [])]
+    const seenIds = new Set(merged.map(g => g.id))
+    for (const g of playedGames) {
+      if (!seenIds.has(g.id)) {
+        merged.push(g)
+        seenIds.add(g.id)
+      }
+    }
+    setGames(merged)
     setLoading(false)
   }, [supabase])
 
@@ -48,7 +64,12 @@ export function GameList() {
   const handleDelete = async (id: string) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    await supabase.from('play_sessions').delete().eq('game_id', id).eq('user_id', user.id)
+    const { data: game } = await supabase.from('games').select('owner_id').eq('id', id).single()
+    if (game?.owner_id === user.id) {
+      await supabase.from('games').update({ archived: true }).eq('id', id)
+    } else {
+      await supabase.from('play_sessions').delete().eq('game_id', id).eq('user_id', user.id)
+    }
     loadGames()
   }
 

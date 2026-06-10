@@ -52,12 +52,10 @@ export function GameCard({ game, onDelete, onRename, index, userId }: GameCardPr
               onClick={() => setIsEditing(!isEditing)}>
               <Edit3 className="h-4 w-4" />
             </Button>
-            {!isOwned && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
-                onClick={() => onDelete(game.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
+            <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
+              onClick={() => onDelete(game.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <CardContent className="p-3">

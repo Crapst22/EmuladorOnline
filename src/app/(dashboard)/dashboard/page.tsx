@@ -19,20 +19,23 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const [{ data: sessions }, { data: playedIds }] = await Promise.all([
+      const [ownedCount, { data: sessions }, { data: playedIds }] = await Promise.all([
+        supabase.from('games').select('*', { count: 'exact', head: true }).eq('owner_id', user.id).eq('archived', false),
         supabase.from('play_sessions').select('started_at, ended_at, game_id').eq('user_id', user.id).order('started_at', { ascending: false }),
         supabase.from('play_sessions').select('game_id').eq('user_id', user.id),
       ])
 
       const uniquePlayedIds = [...new Set(playedIds?.map(s => s.game_id) || [])]
 
-      let query = supabase.from('games').select('*', { count: 'exact', head: true })
+      let gameCount = ownedCount.count || 0
       if (uniquePlayedIds.length > 0) {
-        query = query.or(`owner_id.eq.${user.id},id.in.(${uniquePlayedIds.join(',')})`)
-      } else {
-        query = query.eq('owner_id', user.id)
+        const { count: playedCount } = await supabase
+          .from('games')
+          .select('*', { count: 'exact', head: true })
+          .in('id', uniquePlayedIds)
+          .neq('owner_id', user.id)
+        gameCount += playedCount || 0
       }
-      const { count: gameCount } = await query
 
       let totalMinutes = 0
       let lastSession: DashboardStats['lastSession'] = null
