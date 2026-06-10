@@ -8,7 +8,7 @@ import type { SyncStatus } from '@/types'
 export function useSync(gameId: string) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
   const [isOnline, setIsOnline] = useState(true)
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
   const pendingSaves = useRef<Blob[]>([])
 
   const uploadSave = useCallback(async (blob: Blob, saveType: 'srm' | 'state') => {

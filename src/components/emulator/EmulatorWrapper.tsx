@@ -84,7 +84,10 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     const cleanups: (() => void)[] = []
     let srmInjected = false
 
-    downloadLatestSave('srm').then(async (srmBlob) => {
+    Promise.all([
+      downloadLatestSave('state'),
+      downloadLatestSave('srm'),
+    ]).then(async ([stateBlob, srmBlob]) => {
       let srmData: Uint8Array | null = null
       if (srmBlob) {
         srmData = new Uint8Array(await srmBlob.arrayBuffer())
@@ -98,6 +101,14 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       window.EJS_disableAutoLang = false
       window.EJS_startOnLoaded = true
       window.EJS_gameID = game.id
+
+      if (stateBlob) {
+        window.EJS_loadStateURL = URL.createObjectURL(stateBlob)
+      }
+
+      if (document.querySelector('script[src="/emulatorjs/loader.js"]')) {
+        return
+      }
 
       const script = document.createElement('script')
       script.src = '/emulatorjs/loader.js'
@@ -137,8 +148,8 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         if (emu) {
           emulatorRef.current = emu
 
-          const injectSRM = (attempt = 0) => {
-            if (!srmData || srmInjected) return
+          const tryInjectSRM = (attempt = 0) => {
+            if (!srmData || srmInjected || !emu.gameManager) return
             srmInjected = true
             try {
               const saveFilePath = emu.gameManager.getSaveFilePath()
@@ -158,17 +169,14 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
               emu.gameManager.loadSaveFiles()
             } catch (e: any) {
               srmInjected = false
-              const msg = e?.message || e?.toString() || 'Error desconocido'
               console.error('Error al inyectar SRM (intento ' + attempt + '):', e)
               if (attempt < 5) {
-                setTimeout(() => injectSRM(attempt + 1), 1000)
-              } else {
-                setWarning('No se pudo restaurar el guardado de batería (' + msg + '). Usa los guardados del panel inferior.')
+                setTimeout(() => tryInjectSRM(attempt + 1), 1000)
               }
             }
           }
 
-          emu.on('start', () => injectSRM(0))
+          emu.on('start', () => tryInjectSRM(0))
 
           emu.on('exit', async () => {
             await handleSave()
@@ -178,8 +186,6 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             }
             router.push('/dashboard')
           })
-
-          injectSRM(0)
 
           clearInterval(checkEmulator)
         }
