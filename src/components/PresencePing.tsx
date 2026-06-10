@@ -3,6 +3,13 @@
 import { useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+async function pingServer() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
+}
+
 export default function PresencePing() {
   const authedRef = useRef(false)
 
@@ -17,9 +24,7 @@ export default function PresencePing() {
       authedRef.current = true
 
       async function ping() {
-        try {
-          await fetch('/api/ping', { method: 'POST' })
-        } catch { /* ignore */ }
+        try { await pingServer() } catch { /* ignore */ }
       }
 
       ping()
@@ -28,7 +33,12 @@ export default function PresencePing() {
 
     init()
 
-    const beacon = () => navigator.sendBeacon('/api/ping')
+    const beacon = () => {
+      const supabase = createClient()
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id).then()
+      })
+    }
     window.addEventListener('beforeunload', beacon)
 
     return () => {
