@@ -88,9 +88,13 @@ export function GameList() {
         toast({ variant: 'error', title: 'ERROR', description: 'No se encontraron sesiones de juego para eliminar' })
         return
       }
-      const { error } = await supabase.from('play_sessions').delete().eq('game_id', id).eq('user_id', user.id)
+      const { error, data } = await supabase.from('play_sessions').delete().eq('game_id', id).select()
       if (error) {
         toast({ variant: 'error', title: 'ERROR', description: error.message })
+        return
+      }
+      if (!data || data.length === 0) {
+        toast({ variant: 'error', title: 'ERROR', description: 'No se eliminaron sesiones - posible problema de RLS en Supabase' })
         return
       }
       toast({ variant: 'success', title: 'ELIMINADO', description: `${game.title} eliminado de tu lista` })
