@@ -417,26 +417,30 @@ export async function getOnlineUsers() {
   } = await supabase.auth.getUser()
   if (!user) return { online: [], total: 0 }
 
-  const fiveMinAgo = new Date(Date.now() - 12 * 1000).toISOString()
-
   await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
 
-  const { data: onlineUsers } = await supabase
+  const twelveSecAgo = new Date(Date.now() - 12 * 1000).toISOString()
+
+  const [{ data: recentUsers }, { data: activeSessions }] = await Promise.all([
+    supabase.from('users').select('id, username, avatar_url').gte('last_seen', twelveSecAgo),
+    supabase.from('play_sessions').select('user_id, game_id').is('ended_at', null),
+  ])
+
+  const recentIds = new Set(recentUsers?.map((u) => u.id) || [])
+  const playingIds = new Set(activeSessions?.map((s) => s.user_id) || [])
+
+  const allOnlineIds = new Set([...recentIds, ...playingIds])
+
+  if (allOnlineIds.size === 0) return { online: [], total: 0 }
+
+  const { data: allUsers } = await supabase
     .from('users')
     .select('id, username, avatar_url')
-    .gte('last_seen', fiveMinAgo)
-    .order('username')
+    .in('id', [...allOnlineIds])
 
-  if (!onlineUsers) return { online: [], total: 0 }
+  if (!allUsers) return { online: [], total: 0 }
 
-  const { data: activeSessions } = await supabase
-    .from('play_sessions')
-    .select('user_id, game_id')
-    .is('ended_at', null)
-
-  const onlineIds = onlineUsers.map((u) => u.id)
   const sessionMap = new Map<string, { id: string; title: string }>()
-
   if (activeSessions) {
     const activeGameIds = [...new Set(activeSessions.map((s) => s.game_id))]
     const { data: games } = await supabase
@@ -450,13 +454,11 @@ export async function getOnlineUsers() {
     }
 
     for (const s of activeSessions) {
-      if (onlineIds.includes(s.user_id)) {
-        sessionMap.set(s.user_id, { id: s.game_id, title: gameTitles.get(s.game_id) || 'Jugando' })
-      }
+      sessionMap.set(s.user_id, { id: s.game_id, title: gameTitles.get(s.game_id) || 'Jugando' })
     }
   }
 
-  const online = onlineUsers.map((u) => ({
+  const online = allUsers.map((u) => ({
     id: u.id,
     username: u.username,
     avatar_url: u.avatar_url,
