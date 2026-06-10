@@ -29,8 +29,8 @@ export function useSync(gameId: string) {
       if (!session?.user) throw new Error('No autenticado')
 
       const userId = session.user.id
-      const version = Math.floor(Date.now() / 1000)
-      const savePath = `${userId}/${gameId}/${saveType}_v${Date.now()}`
+      const version = Date.now()
+      const savePath = `${userId}/${gameId}/${saveType}_v${version}`
 
       const { error: storageError } = await supabase.storage.from('saves').upload(savePath, blob, { upsert: true })
       if (storageError) {
@@ -62,29 +62,27 @@ export function useSync(gameId: string) {
   }, [supabase, gameId])
 
   const downloadLatestSave = useCallback(async (saveType: 'srm' | 'state') => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return null
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
 
-      const { data: saves } = await supabase
-        .from('saves')
-        .select('*')
-        .eq('game_id', gameId)
-        .eq('user_id', user.id)
-        .eq('save_type', saveType)
-        .order('version', { ascending: false })
-        .limit(1)
+    const { data: saves, error: queryError } = await supabase
+      .from('saves')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('user_id', user.id)
+      .eq('save_type', saveType)
+      .order('version', { ascending: false })
+      .limit(1)
 
-      if (!saves || saves.length === 0) return null
+    if (queryError) throw new Error(`Error al consultar guardados: ${queryError.message}`)
+    if (!saves || saves.length === 0) return null
 
-      const { data } = await supabase.storage
-        .from('saves')
-        .download(saves[0].save_path)
+    const { data, error: downloadError } = await supabase.storage
+      .from('saves')
+      .download(saves[0].save_path)
 
-      return data || null
-    } catch {
-      return null
-    }
+    if (downloadError) throw new Error(`Error al descargar guardado: ${downloadError.message}`)
+    return data || null
   }, [supabase, gameId])
 
   const syncPendingSaves = useCallback(async () => {

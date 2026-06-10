@@ -6,6 +6,7 @@ import { useSync } from '@/hooks/useSync'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
+import { SavePanel } from './SavePanel'
 import { createClient } from '@/lib/supabase/client'
 import { closePlaySession, pingLastSeen } from '@/lib/storage/roms'
 import { SUPPORTED_CONSOLES } from '@/types'
@@ -40,6 +41,8 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   const supabaseRef = useRef(createClient())
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [warning, setWarning] = useState('')
   const { syncStatus, uploadSave, downloadLatestSave } = useSync(game.id)
   const { gamepadConnected } = useGamepad()
 
@@ -61,6 +64,16 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     emu.saveSettings?.()
   }, [uploadSave])
 
+  const handleLoadState = useCallback(async (arrayBuffer: ArrayBuffer) => {
+    const emu = (window as any).EJS_emulator
+    if (!emu?.gameManager) return
+    try {
+      emu.gameManager.loadState(new Uint8Array(arrayBuffer))
+    } catch (e) {
+      console.error('Error al cargar savestate:', e)
+    }
+  }, [])
+
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
   useEffect(() => {
@@ -69,8 +82,9 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     initialized.current = true
 
     const cleanups: (() => void)[] = []
+    let srmInjected = false
 
-    downloadLatestSave('state').then((stateBlob) => {
+    downloadLatestSave('srm').then((srmBlob) => {
       window.EJS_player = '#game-emulator'
       window.EJS_core = SUPPORTED_CONSOLES[game.console_type]?.emulatorCore || 'snes9x'
       window.EJS_gameUrl = romUrl
@@ -79,10 +93,6 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       window.EJS_disableAutoLang = false
       window.EJS_startOnLoaded = true
       window.EJS_gameID = game.id
-
-      if (stateBlob) {
-        window.EJS_loadStateURL = URL.createObjectURL(stateBlob)
-      }
 
       const script = document.createElement('script')
       script.src = '/emulatorjs/loader.js'
@@ -121,7 +131,36 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         const emu = (window as any).EJS_emulator
         if (emu) {
           emulatorRef.current = emu
+
+          emu.on('start', async () => {
+            if (srmBlob && !srmInjected) {
+              srmInjected = true
+              try {
+                const saveFilePath = emu.gameManager.getSaveFilePath()
+                const uint8 = new Uint8Array(await srmBlob.arrayBuffer())
+                const parts = saveFilePath.split('/')
+                let current = ''
+                for (let i = 0; i < parts.length - 1; i++) {
+                  if (!parts[i]) continue
+                  current += '/' + parts[i]
+                  if (!emu.gameManager.FS.analyzePath(current).exists) {
+                    emu.gameManager.FS.mkdir(current)
+                  }
+                }
+                if (emu.gameManager.FS.analyzePath(saveFilePath).exists) {
+                  emu.gameManager.FS.unlink(saveFilePath)
+                }
+                emu.gameManager.FS.writeFile(saveFilePath, uint8)
+                emu.gameManager.loadSaveFiles()
+              } catch (e) {
+                console.error('Error al inyectar SRM:', e)
+                setWarning('No se pudo restaurar el guardado de batería. Usa los guardados del panel inferior si es necesario.')
+              }
+            }
+          })
+
           emu.on('exit', async () => {
+            await handleSave()
             emu.saveSettings?.()
             if (sessionIdRef.current) {
               await closePlaySession(sessionIdRef.current)
@@ -131,8 +170,10 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           clearInterval(checkEmulator)
         }
       }, 100)
+      cleanups.push(() => clearInterval(checkEmulator))
 
       const saveOnUnload = () => {
+        handleSave()
         const emu = (window as any).EJS_emulator
         emu?.saveSettings?.()
         if (sessionIdRef.current) {
@@ -141,6 +182,9 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       }
       window.addEventListener('beforeunload', saveOnUnload)
       cleanups.push(() => window.removeEventListener('beforeunload', saveOnUnload))
+    }).catch((err: Error) => {
+      setLoadError(err.message || 'Error al cargar los datos de la partida. Recarga la página para intentarlo de nuevo.')
+      initialized.current = false
     })
 
     return () => {
@@ -156,7 +200,24 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       emulatorRef.current = null
       initialized.current = false
     }
-  }, [romUrl, downloadLatestSave, router])
+  }, [romUrl, downloadLatestSave, router, handleSave])
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="retro-panel p-8 text-center max-w-lg">
+          <p className="font-pixel text-[0.7rem] text-[#FF2400] mb-4">{loadError}</p>
+          <p className="font-retro text-sm text-[#808080] mb-6">Los datos guardados anteriores están a salvo en la nube. Una vez que recargues, el sistema intentará cargarlos de nuevo.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="font-pixel text-[0.55rem] text-[#50C878] hover:text-[#FFD700] underline cursor-pointer transition-colors"
+          >
+            REINTENTar
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (error) {
     return (
@@ -172,6 +233,11 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   return (
     <div className="relative flex flex-col items-center">
       <div className="w-full max-w-3xl">
+        {warning && (
+          <div className="retro-panel-dark p-2 mb-2 rounded">
+            <p className="font-pixel text-[0.4rem] text-[#FFD700] text-center">{warning}</p>
+          </div>
+        )}
         {/* Console top bar */}
         <div className="retro-panel p-3 mb-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -211,6 +277,10 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           <div className="flex items-center justify-center py-12">
             <div className="retro-spinner" />
           </div>
+        )}
+
+        {loaded && (
+          <SavePanel gameId={game.id} onLoadState={handleLoadState} />
         )}
       </div>
     </div>
