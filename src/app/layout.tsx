@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
+import PresencePing from '@/components/PresencePing'
 
 export const metadata: Metadata = {
   title: 'RetroVerse',
