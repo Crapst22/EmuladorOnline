@@ -425,6 +425,7 @@ export async function closePlaySession(sessionId: string) {
 
 export async function getOnlineUsers() {
   const supabase = await createServerSupabaseClient()
+  const serviceRole = createServiceRoleClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -434,10 +435,22 @@ export async function getOnlineUsers() {
 
   const twelveSecAgo = new Date(Date.now() - 12 * 1000).toISOString()
 
-  const [{ data: recentUsers }, { data: activeSessions }] = await Promise.all([
-    supabase.from('users').select('id, username, avatar_url').gte('last_seen', twelveSecAgo),
-    supabase.from('play_sessions').select('user_id, game_id').is('ended_at', null),
-  ])
+  const recentUsersPromise = supabase
+    .from('users')
+    .select('id, username, avatar_url')
+    .gte('last_seen', twelveSecAgo)
+
+  let activeSessions: { user_id: string; game_id: string }[] | null = null
+
+  if (serviceRole) {
+    const { data } = await serviceRole
+      .from('play_sessions')
+      .select('user_id, game_id')
+      .is('ended_at', null)
+    activeSessions = data
+  }
+
+  const { data: recentUsers } = await recentUsersPromise
 
   const recentIds = new Set(recentUsers?.map((u) => u.id) || [])
   const playingIds = new Set(activeSessions?.map((s) => s.user_id) || [])
@@ -456,7 +469,8 @@ export async function getOnlineUsers() {
   const sessionMap = new Map<string, { id: string; title: string }>()
   if (activeSessions) {
     const activeGameIds = [...new Set(activeSessions.map((s) => s.game_id))]
-    const { data: games } = await supabase
+    const db = serviceRole || supabase
+    const { data: games } = await db
       .from('games')
       .select('id, title')
       .in('id', activeGameIds)
