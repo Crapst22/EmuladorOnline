@@ -72,6 +72,7 @@ export function GameList() {
       toast({ variant: 'error', title: 'ERROR', description: 'No se encontró el juego' })
       return
     }
+    toast({ variant: 'default', title: 'DEBUG', description: `owner:${game.owner_id?.substring(0,8)} user:${user.id.substring(0,8)} match:${game.owner_id === user.id ? 'SI' : 'NO'}` })
     if (game.owner_id === user.id) {
       const result = await archiveGame(id)
       if (result?.error) {
