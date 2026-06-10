@@ -397,6 +397,19 @@ export interface OnlineUser {
   current_game?: { id: string; title: string } | null
 }
 
+export async function closePlaySession(sessionId: string) {
+  const serviceRole = createServiceRoleClient()
+  if (!serviceRole) return { error: 'Error de configuración del servidor' }
+
+  const { error } = await serviceRole
+    .from('play_sessions')
+    .update({ ended_at: new Date().toISOString() })
+    .eq('id', sessionId)
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
 export async function getOnlineUsers() {
   const supabase = await createServerSupabaseClient()
   const {
@@ -418,13 +431,28 @@ export async function getOnlineUsers() {
 
   const { data: activeSessions } = await supabase
     .from('play_sessions')
-    .select('user_id, game_id, games!inner(title)')
+    .select('user_id, game_id')
     .is('ended_at', null)
 
+  const onlineIds = onlineUsers.map((u) => u.id)
   const sessionMap = new Map<string, { id: string; title: string }>()
+
   if (activeSessions) {
-    for (const s of activeSessions as any[]) {
-      sessionMap.set(s.user_id, { id: s.game_id, title: s.games?.title || 'Jugando' })
+    const activeGameIds = [...new Set(activeSessions.map((s) => s.game_id))]
+    const { data: games } = await supabase
+      .from('games')
+      .select('id, title')
+      .in('id', activeGameIds)
+
+    const gameTitles = new Map<string, string>()
+    if (games) {
+      for (const g of games) gameTitles.set(g.id, g.title)
+    }
+
+    for (const s of activeSessions) {
+      if (onlineIds.includes(s.user_id)) {
+        sessionMap.set(s.user_id, { id: s.game_id, title: gameTitles.get(s.game_id) || 'Jugando' })
+      }
     }
   }
 

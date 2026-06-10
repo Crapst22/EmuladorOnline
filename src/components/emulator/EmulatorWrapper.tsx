@@ -7,6 +7,7 @@ import { useAutoSave } from '@/hooks/useAutoSave'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
 import { createClient } from '@/lib/supabase/client'
+import { closePlaySession } from '@/lib/storage/roms'
 import { SUPPORTED_CONSOLES } from '@/types'
 import type { Game } from '@/types'
 
@@ -120,7 +121,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           emu.on('exit', async () => {
             emu.saveSettings?.()
             if (sessionIdRef.current) {
-              await supabaseRef.current.from('play_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionIdRef.current)
+              await closePlaySession(sessionIdRef.current)
             }
             router.push('/dashboard')
           })
@@ -132,7 +133,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         const emu = (window as any).EJS_emulator
         emu?.saveSettings?.()
         if (sessionIdRef.current) {
-          supabaseRef.current.from('play_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionIdRef.current).then()
+          closePlaySession(sessionIdRef.current)
         }
       }
       window.addEventListener('beforeunload', saveOnUnload)
@@ -142,7 +143,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     return () => {
       for (const fn of cleanups) fn()
       if (sessionIdRef.current) {
-        supabaseRef.current.from('play_sessions').update({ ended_at: new Date().toISOString() }).eq('id', sessionIdRef.current).then()
+        closePlaySession(sessionIdRef.current)
       }
       const emu = (window as any).EJS_emulator
       if (emu) {
