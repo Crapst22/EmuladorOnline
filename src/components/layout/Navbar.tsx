@@ -48,6 +48,7 @@ export function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-2">
+          <OnlineCounter />
           <span className="hidden md:inline-flex">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/dashboard">
@@ -55,7 +56,6 @@ export function Navbar() {
               </Link>
             </Button>
           </span>
-          <OnlineCounter />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-none p-0">
