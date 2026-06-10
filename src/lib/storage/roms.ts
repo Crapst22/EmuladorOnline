@@ -452,19 +452,9 @@ export async function getOnlineUsers() {
 
   const { data: recentUsers } = await recentUsersPromise
 
-  const recentIds = new Set(recentUsers?.map((u) => u.id) || [])
-  const playingIds = new Set(activeSessions?.map((s) => s.user_id) || [])
+  if (!recentUsers || recentUsers.length === 0) return { online: [], total: 0 }
 
-  const allOnlineIds = new Set([...recentIds, ...playingIds])
-
-  if (allOnlineIds.size === 0) return { online: [], total: 0 }
-
-  const { data: allUsers } = await supabase
-    .from('users')
-    .select('id, username, avatar_url')
-    .in('id', [...allOnlineIds])
-
-  if (!allUsers) return { online: [], total: 0 }
+  const recentIds = new Set(recentUsers.map((u) => u.id))
 
   const sessionMap = new Map<string, { id: string; title: string }>()
   if (activeSessions) {
@@ -481,11 +471,13 @@ export async function getOnlineUsers() {
     }
 
     for (const s of activeSessions) {
-      sessionMap.set(s.user_id, { id: s.game_id, title: gameTitles.get(s.game_id) || 'Jugando' })
+      if (recentIds.has(s.user_id)) {
+        sessionMap.set(s.user_id, { id: s.game_id, title: gameTitles.get(s.game_id) || 'Jugando' })
+      }
     }
   }
 
-  const online = allUsers.map((u) => ({
+  const online = recentUsers.map((u) => ({
     id: u.id,
     username: u.username,
     avatar_url: u.avatar_url,
