@@ -137,7 +137,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         if (emu) {
           emulatorRef.current = emu
 
-          async function injectSRM() {
+          const injectSRM = (attempt = 0) => {
             if (!srmData || srmInjected) return
             srmInjected = true
             try {
@@ -156,14 +156,19 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
               }
               emu.gameManager.FS.writeFile(saveFilePath, srmData)
               emu.gameManager.loadSaveFiles()
-            } catch (e) {
+            } catch (e: any) {
               srmInjected = false
-              console.error('Error al inyectar SRM:', e)
-              setWarning('No se pudo restaurar el guardado de batería. Usa los guardados del panel inferior si es necesario.')
+              const msg = e?.message || e?.toString() || 'Error desconocido'
+              console.error('Error al inyectar SRM (intento ' + attempt + '):', e)
+              if (attempt < 5) {
+                setTimeout(() => injectSRM(attempt + 1), 1000)
+              } else {
+                setWarning('No se pudo restaurar el guardado de batería (' + msg + '). Usa los guardados del panel inferior.')
+              }
             }
           }
 
-          emu.on('start', injectSRM)
+          emu.on('start', () => injectSRM(0))
 
           emu.on('exit', async () => {
             await handleSave()
@@ -174,7 +179,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             router.push('/dashboard')
           })
 
-          injectSRM()
+          injectSRM(0)
 
           clearInterval(checkEmulator)
         }
