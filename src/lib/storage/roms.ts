@@ -389,3 +389,51 @@ export async function removePlaySessions(gameId: string) {
   revalidatePath('/dashboard')
   return { success: true }
 }
+
+export interface OnlineUser {
+  id: string
+  username: string
+  avatar_url?: string
+  current_game?: { id: string; title: string } | null
+}
+
+export async function getOnlineUsers() {
+  const supabase = await createServerSupabaseClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { online: [], total: 0 }
+
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+
+  await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
+
+  const { data: onlineUsers } = await supabase
+    .from('users')
+    .select('id, username, avatar_url')
+    .gte('last_seen', fiveMinAgo)
+    .order('username')
+
+  if (!onlineUsers) return { online: [], total: 0 }
+
+  const { data: activeSessions } = await supabase
+    .from('play_sessions')
+    .select('user_id, game_id, games!inner(title)')
+    .is('ended_at', null)
+
+  const sessionMap = new Map<string, { id: string; title: string }>()
+  if (activeSessions) {
+    for (const s of activeSessions as any[]) {
+      sessionMap.set(s.user_id, { id: s.game_id, title: s.games?.title || 'Jugando' })
+    }
+  }
+
+  const online = onlineUsers.map((u) => ({
+    id: u.id,
+    username: u.username,
+    avatar_url: u.avatar_url,
+    current_game: sessionMap.get(u.id) || null,
+  }))
+
+  return { online, total: online.length }
+}

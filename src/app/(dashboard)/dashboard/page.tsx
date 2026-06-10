@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { GameList } from '@/components/game/GameList'
 import { createClient } from '@/lib/supabase/client'
+import OnlineCounter from '@/components/ui/OnlineCounter'
 
 interface DashboardStats {
   gameCount: number
@@ -111,6 +112,9 @@ export default function DashboardPage() {
           <p className="font-pixel text-[0.5rem] text-[#808080] tracking-wider mb-1">{'\u2605'} ULTIMA SESION</p>
           <p className="font-pixel text-[0.55rem] text-[#FFD700] leading-relaxed">{formatLastSession(stats.lastSession)}</p>
         </div>
+      </div>
+      <div className="flex justify-end">
+        <OnlineCounter />
       </div>
       <GameList />
     </div>
