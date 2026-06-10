@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { GameCard } from './GameCard'
 import { UploadRom } from './UploadRom'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import type { Game } from '@/types'
 import { motion } from 'framer-motion'
@@ -16,6 +17,7 @@ export function GameList() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
+  const { toast } = useToast()
   const supabase = createClient()
 
   const loadGames = useCallback(async () => {
@@ -64,11 +66,25 @@ export function GameList() {
   const handleDelete = async (id: string) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: game } = await supabase.from('games').select('owner_id').eq('id', id).single()
-    if (game?.owner_id === user.id) {
-      await supabase.from('games').update({ archived: true }).eq('id', id)
+    const { data: game } = await supabase.from('games').select('owner_id, title').eq('id', id).single()
+    if (!game) {
+      toast({ variant: 'error', title: 'ERROR', description: 'No se encontró el juego' })
+      return
+    }
+    if (game.owner_id === user.id) {
+      const { error } = await supabase.from('games').update({ archived: true }).eq('id', id)
+      if (error) {
+        toast({ variant: 'error', title: 'ERROR AL ARCHIVAR', description: error.message })
+        return
+      }
+      toast({ variant: 'success', title: 'ARCHIVADO', description: `${game.title} archivado de tu biblioteca` })
     } else {
-      await supabase.from('play_sessions').delete().eq('game_id', id).eq('user_id', user.id)
+      const { error } = await supabase.from('play_sessions').delete().eq('game_id', id).eq('user_id', user.id)
+      if (error) {
+        toast({ variant: 'error', title: 'ERROR', description: error.message })
+        return
+      }
+      toast({ variant: 'success', title: 'ELIMINADO', description: `${game.title} eliminado de tu lista` })
     }
     loadGames()
   }
