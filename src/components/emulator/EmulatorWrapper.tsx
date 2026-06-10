@@ -7,7 +7,7 @@ import { useAutoSave } from '@/hooks/useAutoSave'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
 import { createClient } from '@/lib/supabase/client'
-import { closePlaySession } from '@/lib/storage/roms'
+import { closePlaySession, pingLastSeen } from '@/lib/storage/roms'
 import { SUPPORTED_CONSOLES } from '@/types'
 import type { Game } from '@/types'
 
@@ -110,6 +110,9 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             if (sessionData) sessionIdRef.current = sessionData.id
           }
         }
+
+        const pingInterval = setInterval(() => pingLastSeen(), 8_000)
+        cleanups.push(() => clearInterval(pingInterval))
       }
       script.onerror = () => { setError('Error al cargar el emulador') }
       document.body.appendChild(script)

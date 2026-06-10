@@ -397,6 +397,19 @@ export interface OnlineUser {
   current_game?: { id: string; title: string } | null
 }
 
+export async function pingLastSeen() {
+  const supabase = await createServerSupabaseClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+
+  const serviceRole = createServiceRoleClient()
+  if (!serviceRole) return
+
+  await serviceRole.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
+}
+
 export async function closePlaySession(sessionId: string) {
   const serviceRole = createServiceRoleClient()
   if (!serviceRole) return { error: 'Error de configuración del servidor' }
