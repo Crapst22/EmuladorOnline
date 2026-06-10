@@ -25,6 +25,7 @@ declare global {
     EJS_startOnLoaded?: boolean
     EJS_loadStateURL?: string
     EJS_gameID?: string
+    EJS_gameName?: string
   }
 }
 
@@ -98,7 +99,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       window.EJS_disableAutoLang = false
       window.EJS_startOnLoaded = true
       window.EJS_gameID = game.id
-
+      window.EJS_gameName = game.id
 
       if (document.querySelector('script[src="/emulatorjs/loader.js"]')) {
         return
