@@ -86,7 +86,7 @@ export function GameList() {
       }
       toast({ variant: 'success', title: 'ELIMINADO', description: `${game.title} eliminado de tu lista` })
     }
-    loadGames()
+    setGames((prev) => prev.filter((g) => g.id !== id))
   }
 
   const handleRename = async (id: string, title: string) => {
