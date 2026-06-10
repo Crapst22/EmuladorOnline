@@ -84,10 +84,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     const cleanups: (() => void)[] = []
     let srmInjected = false
 
-    Promise.all([
-      downloadLatestSave('state'),
-      downloadLatestSave('srm'),
-    ]).then(async ([stateBlob, srmBlob]) => {
+    downloadLatestSave('srm').then(async (srmBlob) => {
       let srmData: Uint8Array | null = null
       if (srmBlob) {
         srmData = new Uint8Array(await srmBlob.arrayBuffer())
@@ -102,9 +99,6 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       window.EJS_startOnLoaded = true
       window.EJS_gameID = game.id
 
-      if (stateBlob) {
-        window.EJS_loadStateURL = URL.createObjectURL(stateBlob)
-      }
 
       if (document.querySelector('script[src="/emulatorjs/loader.js"]')) {
         return
@@ -153,25 +147,15 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             srmInjected = true
             try {
               const saveFilePath = emu.gameManager.getSaveFilePath()
-              const parts = saveFilePath.split('/')
-              let current = ''
-              for (let i = 0; i < parts.length - 1; i++) {
-                if (!parts[i]) continue
-                current += '/' + parts[i]
-                if (!emu.gameManager.FS.analyzePath(current).exists) {
-                  emu.gameManager.FS.mkdir(current)
-                }
-              }
-              if (emu.gameManager.FS.analyzePath(saveFilePath).exists) {
-                emu.gameManager.FS.unlink(saveFilePath)
-              }
-              emu.gameManager.FS.writeFile(saveFilePath, srmData)
+              emu.gameManager.writeFile(saveFilePath, srmData)
               emu.gameManager.loadSaveFiles()
             } catch (e: any) {
               srmInjected = false
               console.error('Error al inyectar SRM (intento ' + attempt + '):', e)
               if (attempt < 5) {
                 setTimeout(() => tryInjectSRM(attempt + 1), 1000)
+              } else {
+                setWarning('No se pudo restaurar el guardado automático. Debajo tenés los últimos 3 savestates con fecha y hora para cargar manualmente.')
               }
             }
           }
