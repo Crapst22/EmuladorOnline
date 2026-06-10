@@ -15,11 +15,13 @@ export function GameList() {
   const [games, setGames] = useState<Game[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
   const supabase = createClient()
 
   const loadGames = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); return }
+    setUserId(user.id)
 
     const { data: sessions } = await supabase
       .from('play_sessions')
@@ -44,11 +46,9 @@ export function GameList() {
   useEffect(() => { loadGames() }, [loadGames])
 
   const handleDelete = async (id: string) => {
-    const { data: game } = await supabase.from('games').select('rom_path').eq('id', id).single()
-    if (game) { await supabase.storage.from('roms').remove([game.rom_path]) }
-    await supabase.from('saves').delete().eq('game_id', id)
-    await supabase.from('play_sessions').delete().eq('game_id', id)
-    await supabase.from('games').delete().eq('id', id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('play_sessions').delete().eq('game_id', id).eq('user_id', user.id)
     loadGames()
   }
 
@@ -123,7 +123,7 @@ export function GameList() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map((game, i) => (
-            <GameCard key={game.id} game={game} onDelete={handleDelete} onRename={handleRename} index={i} />
+            <GameCard key={game.id} game={game} onDelete={handleDelete} onRename={handleRename} index={i} userId={userId || undefined} />
           ))}
         </div>
       )}

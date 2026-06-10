@@ -14,9 +14,11 @@ interface GameCardProps {
   onDelete: (id: string) => void
   onRename: (id: string, title: string) => void
   index: number
+  userId?: string
 }
 
-export function GameCard({ game, onDelete, onRename, index }: GameCardProps) {
+export function GameCard({ game, onDelete, onRename, index, userId }: GameCardProps) {
+  const isOwned = game.owner_id === userId
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [newTitle, setNewTitle] = useState(game.title)
@@ -50,10 +52,12 @@ export function GameCard({ game, onDelete, onRename, index }: GameCardProps) {
               onClick={() => setIsEditing(!isEditing)}>
               <Edit3 className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
-              onClick={() => onDelete(game.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {!isOwned && (
+              <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
+                onClick={() => onDelete(game.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         <CardContent className="p-3">
