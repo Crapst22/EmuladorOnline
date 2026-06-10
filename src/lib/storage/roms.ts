@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/constants'
 import { cleanupOldSaves } from '@/lib/storage/saves'
 import { revalidatePath } from 'next/cache'
@@ -366,6 +366,7 @@ export async function getDashboardGames() {
 
 export async function removePlaySessions(gameId: string) {
   const supabase = await createServerSupabaseClient()
+  const serviceRole = createServiceRoleClient()
 
   const {
     data: { user },
@@ -378,7 +379,7 @@ export async function removePlaySessions(gameId: string) {
     .eq('game_id', gameId)
     .eq('user_id', user.id)
 
-  const { error } = await supabase
+  const { error } = await serviceRole
     .from('play_sessions')
     .delete()
     .eq('game_id', gameId)
