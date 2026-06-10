@@ -50,7 +50,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     const emu = (window as any).EJS_emulator
     if (!emu?.gameManager) return
     try {
-      const srm = emu.gameManager.getSaveFile(false)
+      const srm = emu.gameManager.getSaveFile()
       if (srm) {
         const blob = new Blob([srm], { type: 'application/octet-stream' })
         await uploadSave(blob, 'srm')
@@ -84,7 +84,12 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     const cleanups: (() => void)[] = []
     let srmInjected = false
 
-    downloadLatestSave('srm').then((srmBlob) => {
+    downloadLatestSave('srm').then(async (srmBlob) => {
+      let srmData: Uint8Array | null = null
+      if (srmBlob) {
+        srmData = new Uint8Array(await srmBlob.arrayBuffer())
+      }
+
       window.EJS_player = '#game-emulator'
       window.EJS_core = SUPPORTED_CONSOLES[game.console_type]?.emulatorCore || 'snes9x'
       window.EJS_gameUrl = romUrl
@@ -133,28 +138,11 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           emulatorRef.current = emu
 
           emu.on('start', async () => {
-            if (srmBlob && !srmInjected) {
-              srmInjected = true
+            if (srmData && srmInjected) {
               try {
-                const saveFilePath = emu.gameManager.getSaveFilePath()
-                const uint8 = new Uint8Array(await srmBlob.arrayBuffer())
-                const parts = saveFilePath.split('/')
-                let current = ''
-                for (let i = 0; i < parts.length - 1; i++) {
-                  if (!parts[i]) continue
-                  current += '/' + parts[i]
-                  if (!emu.gameManager.FS.analyzePath(current).exists) {
-                    emu.gameManager.FS.mkdir(current)
-                  }
-                }
-                if (emu.gameManager.FS.analyzePath(saveFilePath).exists) {
-                  emu.gameManager.FS.unlink(saveFilePath)
-                }
-                emu.gameManager.FS.writeFile(saveFilePath, uint8)
                 emu.gameManager.loadSaveFiles()
               } catch (e) {
-                console.error('Error al inyectar SRM:', e)
-                setWarning('No se pudo restaurar el guardado de batería. Usa los guardados del panel inferior si es necesario.')
+                console.error('Error al refrescar saves en start:', e)
               }
             }
           })
@@ -167,6 +155,30 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             }
             router.push('/dashboard')
           })
+
+          if (srmData && !srmInjected) {
+            try {
+              const saveFilePath = emu.gameManager.getSaveFilePath()
+              const parts = saveFilePath.split('/')
+              let current = ''
+              for (let i = 0; i < parts.length - 1; i++) {
+                if (!parts[i]) continue
+                current += '/' + parts[i]
+                if (!emu.gameManager.FS.analyzePath(current).exists) {
+                  emu.gameManager.FS.mkdir(current)
+                }
+              }
+              if (emu.gameManager.FS.analyzePath(saveFilePath).exists) {
+                emu.gameManager.FS.unlink(saveFilePath)
+              }
+              emu.gameManager.FS.writeFile(saveFilePath, srmData)
+              srmInjected = true
+            } catch (e) {
+              console.error('Error al inyectar SRM:', e)
+              setWarning('No se pudo restaurar el guardado de batería. Usa los guardados del panel inferior si es necesario.')
+            }
+          }
+
           clearInterval(checkEmulator)
         }
       }, 100)
