@@ -49,6 +49,13 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
     if (f && validateFile(f)) setFile(f)
   }
 
+  async function computeFileHash(f: File): Promise<string> {
+    const buffer = await f.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
   const handleUpload = async () => {
     if (!file || !title.trim()) return
     setLoading(true)
@@ -60,17 +67,35 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
       return
     }
 
-    const { data: existing } = await supabase
+    const fileHash = await computeFileHash(file)
+
+    const { data: hashMatch } = await supabase
+      .from('games')
+      .select('title')
+      .eq('file_hash', fileHash)
+      .limit(1)
+
+    if (hashMatch && hashMatch.length > 0) {
+      toast({
+        variant: 'warning',
+        title: 'ARCHIVO YA CARGADO',
+        description: 'Ese archivo ROM ya fue subido por otro usuario. Fijate en la pantalla de Juegos Cargados.',
+      })
+      setLoading(false)
+      return
+    }
+
+    const { data: titleMatch } = await supabase
       .from('games')
       .select('title')
       .ilike('title', title.trim())
       .limit(1)
 
-    if (existing && existing.length > 0) {
+    if (titleMatch && titleMatch.length > 0) {
       toast({
         variant: 'warning',
         title: 'JUEGO YA CARGADO',
-        description: 'Ese juego ya existe en la plataforma. Fijate en la pantalla de Juegos Cargados.',
+        description: 'Ya existe un juego con ese nombre. Fijate en la pantalla de Juegos Cargados.',
       })
       setLoading(false)
       return
@@ -94,6 +119,7 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
       title: title.trim(),
       console_type: 'snes',
       rom_path: filePath,
+      file_hash: fileHash,
     })
 
     if (dbError) {

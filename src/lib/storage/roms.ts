@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/constants'
 import { cleanupOldSaves } from '@/lib/storage/saves'
 import { revalidatePath } from 'next/cache'
+import crypto from 'crypto'
 
 export async function uploadRom(formData: FormData) {
   const supabase = await createServerSupabaseClient()
@@ -29,14 +30,27 @@ export async function uploadRom(formData: FormData) {
     return { error: 'Tipo de archivo no permitido. Use: .smc, .sfc, .fig' }
   }
 
-  const { data: existing } = await supabase
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const fileHash = crypto.createHash('sha256').update(buffer).digest('hex')
+
+  const { data: hashMatch } = await supabase
+    .from('games')
+    .select('title')
+    .eq('file_hash', fileHash)
+    .limit(1)
+
+  if (hashMatch && hashMatch.length > 0) {
+    return { error: 'Ese archivo ROM ya fue subido por otro usuario. Fijate en la pantalla de Juegos Cargados.' }
+  }
+
+  const { data: titleMatch } = await supabase
     .from('games')
     .select('title')
     .ilike('title', title)
     .limit(1)
 
-  if (existing && existing.length > 0) {
-    return { error: 'Ese juego ya existe en la plataforma. Fijate en la pantalla de Juegos Cargados.' }
+  if (titleMatch && titleMatch.length > 0) {
+    return { error: 'Ya existe un juego con ese nombre. Fijate en la pantalla de Juegos Cargados.' }
   }
 
   const filePath = `${user.id}/${crypto.randomUUID()}${extension}`
@@ -52,6 +66,7 @@ export async function uploadRom(formData: FormData) {
     title,
     console_type: consoleType,
     rom_path: filePath,
+    file_hash: fileHash,
   })
 
   if (dbError) {
