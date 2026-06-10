@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/components/ui/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS } from '@/lib/constants'
+import { SUPPORTED_CONSOLES } from '@/types'
+import type { ConsoleType } from '@/types'
 
 interface UploadRomProps {
   onUploadComplete: () => void
@@ -19,15 +21,17 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
+  const [consoleType, setConsoleType] = useState<ConsoleType>('snes')
   const [loading, setLoading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const { toast } = useToast()
   const supabase = createClient()
 
-  const validateFile = useCallback((f: File) => {
+  const validateFile = useCallback((f: File, consoleType: ConsoleType) => {
     const ext = '.' + f.name.split('.').pop()?.toLowerCase()
-    if (!ALLOWED_ROM_EXTENSIONS.includes(ext)) {
-      toast({ variant: 'error', title: 'ARCHIVO NO VALIDO', description: 'Solo .smc, .sfc, .fig' })
+    const allowedForConsole = SUPPORTED_CONSOLES[consoleType]?.extensions || []
+    if (!allowedForConsole.includes(ext)) {
+      toast({ variant: 'error', title: 'ARCHIVO NO VALIDO', description: `${SUPPORTED_CONSOLES[consoleType]?.name} solo acepta: ${allowedForConsole.join(', ')}` })
       return false
     }
     if (f.size > MAX_ROM_SIZE) {
@@ -41,12 +45,12 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
     e.preventDefault()
     setDragOver(false)
     const f = e.dataTransfer.files[0]
-    if (f && validateFile(f)) setFile(f)
-  }, [validateFile])
+    if (f && validateFile(f, consoleType)) setFile(f)
+  }, [validateFile, consoleType])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
-    if (f && validateFile(f)) setFile(f)
+    if (f && validateFile(f, consoleType)) setFile(f)
   }
 
   async function computeFileHash(f: File): Promise<string> {
@@ -117,7 +121,7 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
     const { error: dbError } = await supabase.from('games').insert({
       owner_id: user.id,
       title: title.trim(),
-      console_type: 'snes',
+      console_type: consoleType,
       rom_path: filePath,
       file_hash: fileHash,
     })
@@ -159,6 +163,25 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
+          <div className="space-y-2">
+            <Label>PLATAFORMA</Label>
+            <div className="flex gap-2">
+              {(Object.entries(SUPPORTED_CONSOLES) as [ConsoleType, typeof SUPPORTED_CONSOLES[ConsoleType]][]).map(([key, console]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { setConsoleType(key); setFile(null) }}
+                  className={`flex-1 py-2 px-3 font-pixel text-[0.5rem] border transition-all ${
+                    consoleType === key
+                      ? 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]'
+                      : 'border-[#FFD700]/20 text-[#808080] hover:border-[#FFD700]/40'
+                  }`}
+                >
+                  {console.name.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
           <div
             className={`relative border-2 border-dashed p-8 text-center transition-colors ${
               dragOver ? 'border-[#FFD700] bg-[#FFD700]/5' : 'border-[#FFD700]/20 hover:border-[#FFD700]/40'
@@ -181,12 +204,12 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
                 <p className="font-retro text-base text-[#A0A0A0]">
                   Arrastra tu ROM aqui o haz clic para seleccionar
                 </p>
-                <p className="font-retro text-sm text-[#808080] mt-1">.smc, .sfc, .fig (max 50MB)</p>
+                <p className="font-retro text-sm text-[#808080] mt-1">{SUPPORTED_CONSOLES[consoleType]?.extensions.join(', ')} (max 50MB)</p>
               </div>
             )}
             <input
               type="file"
-              accept=".smc,.sfc,.fig"
+              accept={SUPPORTED_CONSOLES[consoleType]?.extensions.join(',')}
               className="absolute inset-0 cursor-pointer opacity-0"
               onChange={handleFileSelect}
             />

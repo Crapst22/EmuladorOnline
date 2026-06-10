@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { SUPPORTED_CONSOLES } from '@/types'
 import type { Game } from '@/types'
 
 interface GameCardProps {
@@ -72,7 +73,7 @@ export function GameCard({ game, onDelete, onRename, index, userId }: GameCardPr
             <div className="retro-radar">
               <div className="retro-radar-dot" />
             </div>
-            <p className="font-retro text-sm text-[#808080]">SNES</p>
+            <p className="font-retro text-sm text-[#808080]">{SUPPORTED_CONSOLES[game.console_type]?.name?.toUpperCase() || 'SNES'}</p>
           </div>
         </CardContent>
       </Card>

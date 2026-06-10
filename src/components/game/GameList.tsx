@@ -101,7 +101,7 @@ export function GameList() {
         </div>
         <h3 className="font-pixel text-[0.7rem] text-[#FFD700] mb-4">TU BIBLIOTECA ESTA VACIA</h3>
         <p className="font-retro text-base text-[#A0A0A0] mb-6 max-w-sm">
-          Sube tus ROMs de Super Nintendo para empezar a jugar desde cualquier dispositivo
+          Sube tus ROMs de Super Nintendo o Game Boy Advance para empezar a jugar desde cualquier dispositivo
         </p>
         <div className="flex gap-2">
           <span className="hidden md:inline-flex">

@@ -1,4 +1,4 @@
-export type ConsoleType = 'snes'
+export type ConsoleType = 'snes' | 'gba'
 
 export interface ConsoleDefinition {
   id: ConsoleType
@@ -25,6 +25,25 @@ export const SUPPORTED_CONSOLES: Record<ConsoleType, ConsoleDefinition> = {
       x: 'b',
       a: 'x',
       s: 'y',
+      Enter: 'start',
+      Shift: 'select',
+      q: 'l',
+      w: 'r',
+    },
+  },
+  gba: {
+    id: 'gba',
+    name: 'Game Boy Advance',
+    emulatorCore: 'mgba',
+    extensions: ['.gba'],
+    saveFormat: 'srm',
+    controls: {
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+      z: 'b',
+      x: 'a',
       Enter: 'start',
       Shift: 'select',
       q: 'l',

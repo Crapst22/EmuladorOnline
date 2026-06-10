@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
+import { SUPPORTED_CONSOLES } from '@/types'
 import type { Game } from '@/types'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
@@ -173,7 +174,7 @@ export function AllGamesList() {
                     <div className="retro-radar">
                       <div className="retro-radar-dot" />
                     </div>
-                    <p className="font-retro text-sm text-[#808080]">SNES</p>
+                    <p className="font-retro text-sm text-[#808080]">{SUPPORTED_CONSOLES[game.console_type]?.name?.toUpperCase() || 'SNES'}</p>
                   </div>
                 </CardContent>
               </Card>

@@ -7,6 +7,7 @@ import { useAutoSave } from '@/hooks/useAutoSave'
 import { useGamepad } from '@/hooks/useGamepad'
 import { SyncIndicator } from './SyncIndicator'
 import { createClient } from '@/lib/supabase/client'
+import { SUPPORTED_CONSOLES } from '@/types'
 import type { Game } from '@/types'
 
 declare global {
@@ -70,7 +71,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
     downloadLatestSave('state').then((stateBlob) => {
       window.EJS_player = '#game-emulator'
-      window.EJS_core = 'snes9x'
+      window.EJS_core = SUPPORTED_CONSOLES[game.console_type]?.emulatorCore || 'snes9x'
       window.EJS_gameUrl = romUrl
       window.EJS_pathtodata = '/emulatorjs/'
       window.EJS_language = 'es-ES'
@@ -167,7 +168,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   return (
     <div className="relative flex flex-col items-center">
       <div className="w-full max-w-3xl">
-        {/* SNES Console top bar */}
+        {/* Console top bar */}
         <div className="retro-panel p-3 mb-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-[#50C878] rounded-full shadow-[0_0_4px_rgba(80,200,120,0.5)]" />
@@ -195,7 +196,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         <div className="retro-panel-dark p-3 mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-[#FF2400] rounded-full animate-pulse" />
-            <span className="font-pixel text-[0.4rem] text-[#808080]">SNES9X</span>
+            <span className="font-pixel text-[0.4rem] text-[#808080]">{SUPPORTED_CONSOLES[game.console_type]?.name?.toUpperCase() || 'SNES'}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="font-pixel text-[0.4rem] text-[#808080]">RETROCLOUD</span>
