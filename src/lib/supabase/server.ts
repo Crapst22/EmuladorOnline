@@ -26,8 +26,10 @@ export async function createServerSupabaseClient() {
 }
 
 export function createServiceRoleClient() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) return null
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    key,
   )
 }

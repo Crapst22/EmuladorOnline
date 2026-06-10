@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/constants'
 import { cleanupOldSaves } from '@/lib/storage/saves'
 import { revalidatePath } from 'next/cache'
@@ -109,8 +109,10 @@ export async function deleteRom(gameId: string) {
 
 export async function renameRom(gameId: string, newTitle: string) {
   const supabase = await createServerSupabaseClient()
+  const serviceRole = createServiceRoleClient()
+  if (!serviceRole) return { error: 'Error de configuración del servidor' }
 
-  const { error } = await supabase
+  const { error } = await serviceRole
     .from('games')
     .update({ title: newTitle })
     .eq('id', gameId)
@@ -299,13 +301,15 @@ export async function endPlaySession(sessionId: string) {
 
 export async function archiveGame(gameId: string) {
   const supabase = await createServerSupabaseClient()
+  const serviceRole = createServiceRoleClient()
+  if (!serviceRole) return { error: 'Error de configuración del servidor' }
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { error } = await supabase
+  const { error } = await serviceRole
     .from('games')
     .update({ archived: true })
     .eq('id', gameId)
@@ -366,33 +370,21 @@ export async function getDashboardGames() {
 
 export async function removePlaySessions(gameId: string) {
   const supabase = await createServerSupabaseClient()
+  const serviceRole = createServiceRoleClient()
+  if (!serviceRole) return { error: 'Error de configuración del servidor' }
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const accessToken = session?.access_token
-  if (!accessToken) return { error: 'No hay sesión activa' }
+  const { error } = await serviceRole
+    .from('play_sessions')
+    .delete()
+    .eq('game_id', gameId)
+    .eq('user_id', user.id)
 
-  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/play_sessions?game_id=eq.${gameId}&user_id=eq.${user.id}`
-
-  const res = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    },
-  })
-
-  if (!res.ok) {
-    const text = await res.text()
-    return { error: `Error al eliminar (${res.status}): ${text}` }
-  }
+  if (error) return { error: error.message }
 
   revalidatePath('/dashboard')
   return { success: true }
