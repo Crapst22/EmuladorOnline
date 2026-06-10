@@ -417,7 +417,7 @@ export async function getOnlineUsers() {
   } = await supabase.auth.getUser()
   if (!user) return { online: [], total: 0 }
 
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+  const fiveMinAgo = new Date(Date.now() - 12 * 1000).toISOString()
 
   await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
 

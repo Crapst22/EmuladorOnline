@@ -35,8 +35,13 @@ export default function OnlineCounter() {
 
   useEffect(() => {
     fetchOnline()
-    const interval = setInterval(fetchOnline, 30_000)
-    return () => clearInterval(interval)
+    const interval = setInterval(fetchOnline, 8_000)
+    const pingBeforeClose = () => navigator.sendBeacon('/api/ping')
+    window.addEventListener('beforeunload', pingBeforeClose)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('beforeunload', pingBeforeClose)
+    }
   }, [fetchOnline])
 
   useEffect(() => {
