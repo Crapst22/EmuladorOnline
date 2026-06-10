@@ -137,26 +137,9 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         if (emu) {
           emulatorRef.current = emu
 
-          emu.on('start', async () => {
-            if (srmData && srmInjected) {
-              try {
-                emu.gameManager.loadSaveFiles()
-              } catch (e) {
-                console.error('Error al refrescar saves en start:', e)
-              }
-            }
-          })
-
-          emu.on('exit', async () => {
-            await handleSave()
-            emu.saveSettings?.()
-            if (sessionIdRef.current) {
-              await closePlaySession(sessionIdRef.current)
-            }
-            router.push('/dashboard')
-          })
-
-          if (srmData && !srmInjected) {
+          async function injectSRM() {
+            if (!srmData || srmInjected) return
+            srmInjected = true
             try {
               const saveFilePath = emu.gameManager.getSaveFilePath()
               const parts = saveFilePath.split('/')
@@ -172,12 +155,26 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
                 emu.gameManager.FS.unlink(saveFilePath)
               }
               emu.gameManager.FS.writeFile(saveFilePath, srmData)
-              srmInjected = true
+              emu.gameManager.loadSaveFiles()
             } catch (e) {
+              srmInjected = false
               console.error('Error al inyectar SRM:', e)
               setWarning('No se pudo restaurar el guardado de batería. Usa los guardados del panel inferior si es necesario.')
             }
           }
+
+          emu.on('start', injectSRM)
+
+          emu.on('exit', async () => {
+            await handleSave()
+            emu.saveSettings?.()
+            if (sessionIdRef.current) {
+              await closePlaySession(sessionIdRef.current)
+            }
+            router.push('/dashboard')
+          })
+
+          injectSRM()
 
           clearInterval(checkEmulator)
         }
