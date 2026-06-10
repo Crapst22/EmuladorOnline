@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/constants'
 import { cleanupOldSaves } from '@/lib/storage/saves'
 import { revalidatePath } from 'next/cache'
@@ -366,37 +366,34 @@ export async function getDashboardGames() {
 
 export async function removePlaySessions(gameId: string) {
   const supabase = await createServerSupabaseClient()
-  const serviceRole = createServiceRoleClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { count: before } = await supabase
-    .from('play_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('game_id', gameId)
-    .eq('user_id', user.id)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  const accessToken = session?.access_token
+  if (!accessToken) return { error: 'No hay sesión activa' }
 
-  const { error } = await serviceRole
-    .from('play_sessions')
-    .delete()
-    .eq('game_id', gameId)
-    .eq('user_id', user.id)
+  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/play_sessions?game_id=eq.${gameId}&user_id=eq.${user.id}`
 
-  if (error) return { error: error.message }
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    },
+  })
 
-  const { count: after } = await supabase
-    .from('play_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('game_id', gameId)
-    .eq('user_id', user.id)
-
-  if (before && after && before > after) {
-    revalidatePath('/dashboard')
-    return { success: true, deleted: before - after }
+  if (!res.ok) {
+    const text = await res.text()
+    return { error: `Error al eliminar (${res.status}): ${text}` }
   }
 
-  return { error: `No se eliminaron sesiones (antes: ${before}, despues: ${after})` }
+  revalidatePath('/dashboard')
+  return { success: true }
 }
