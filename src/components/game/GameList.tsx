@@ -9,6 +9,7 @@ import { UploadRom } from './UploadRom'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { createClient } from '@/lib/supabase/client'
+import { archiveGame, removePlaySessions } from '@/lib/storage/roms'
 import type { Game } from '@/types'
 import { motion } from 'framer-motion'
 
@@ -72,29 +73,16 @@ export function GameList() {
       return
     }
     if (game.owner_id === user.id) {
-      const { error } = await supabase.from('games').update({ archived: true }).eq('id', id)
-      if (error) {
-        toast({ variant: 'error', title: 'ERROR AL ARCHIVAR', description: error.message })
+      const result = await archiveGame(id)
+      if (result?.error) {
+        toast({ variant: 'error', title: 'ERROR AL ARCHIVAR', description: result.error })
         return
       }
       toast({ variant: 'success', title: 'ARCHIVADO', description: `${game.title} archivado de tu biblioteca` })
     } else {
-      const { count } = await supabase
-        .from('play_sessions')
-        .select('*', { count: 'exact', head: true })
-        .eq('game_id', id)
-        .eq('user_id', user.id)
-      if (!count || count === 0) {
-        toast({ variant: 'error', title: 'ERROR', description: 'No se encontraron sesiones de juego para eliminar' })
-        return
-      }
-      const { error, data } = await supabase.from('play_sessions').delete().eq('game_id', id).eq('user_id', user.id).select()
-      if (error) {
-        toast({ variant: 'error', title: 'ERROR', description: error.message })
-        return
-      }
-      if (!data || data.length === 0) {
-        toast({ variant: 'error', title: 'ERROR', description: 'No se eliminaron sesiones - posible problema de RLS en Supabase' })
+      const result = await removePlaySessions(id)
+      if (result?.error) {
+        toast({ variant: 'error', title: 'ERROR', description: result.error })
         return
       }
       toast({ variant: 'success', title: 'ELIMINADO', description: `${game.title} eliminado de tu lista` })

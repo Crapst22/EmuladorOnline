@@ -295,3 +295,43 @@ export async function endPlaySession(sessionId: string) {
     .update({ ended_at: new Date().toISOString() })
     .eq('id', sessionId)
 }
+
+export async function archiveGame(gameId: string) {
+  const supabase = await createServerSupabaseClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { error } = await supabase
+    .from('games')
+    .update({ archived: true })
+    .eq('id', gameId)
+    .eq('owner_id', user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function removePlaySessions(gameId: string) {
+  const supabase = await createServerSupabaseClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { error } = await supabase
+    .from('play_sessions')
+    .delete()
+    .eq('game_id', gameId)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}
