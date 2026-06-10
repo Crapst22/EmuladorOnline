@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { cleanupOldSaves } from '@/lib/storage/saves'
+import { MAX_SAVES_PER_GAME } from '@/lib/constants'
 import type { SyncStatus } from '@/types'
 
 export function useSync(gameId: string) {
@@ -52,7 +52,21 @@ export function useSync(gameId: string) {
         throw dbError
       }
 
-      await cleanupOldSaves(gameId, saveType)
+      const { data: allSaves } = await supabase
+        .from('saves')
+        .select('id, save_path')
+        .eq('game_id', gameId)
+        .eq('user_id', userId)
+        .eq('save_type', saveType)
+        .order('version', { ascending: false })
+
+      if (allSaves && allSaves.length > MAX_SAVES_PER_GAME) {
+        const toDelete = allSaves.slice(MAX_SAVES_PER_GAME)
+        await Promise.all([
+          supabase.storage.from('saves').remove(toDelete.map(s => s.save_path)),
+          supabase.from('saves').delete().in('id', toDelete.map(s => s.id)),
+        ])
+      }
 
       setSyncStatus('synced')
     } catch (e) {
