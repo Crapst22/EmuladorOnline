@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, User, Settings, Home, Gamepad2 } from 'lucide-react'
+import { LogOut, User, Settings, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -15,6 +15,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import type { UserProfile } from '@/types'
+import OnlineCounter from '@/components/ui/OnlineCounter'
 
 export function Navbar() {
   const router = useRouter()
@@ -54,6 +55,7 @@ export function Navbar() {
               </Link>
             </Button>
           </span>
+          <OnlineCounter />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-none p-0">
