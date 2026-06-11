@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { EmulatorWrapper } from '@/components/emulator/EmulatorWrapper'
 import { STORAGE_BUCKETS } from '@/lib/constants'
@@ -15,6 +15,14 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
     .eq('id', id)
     .single()
   if (!game) redirect('/dashboard')
+
+  if (game.archived && game.owner_id === user.id) {
+    const serviceRole = createServiceRoleClient()
+    if (serviceRole) {
+      await serviceRole.from('games').update({ archived: false }).eq('id', game.id)
+      game.archived = false
+    }
+  }
 
   const { data: urlData } = await supabase.storage
     .from(STORAGE_BUCKETS.ROMS)

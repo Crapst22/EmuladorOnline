@@ -352,6 +352,7 @@ export async function getDashboardGames() {
       .from('games')
       .select('*')
       .in('id', playedIds)
+      .neq('archived', true)
       .order('updated_at', { ascending: false })
     playedGames = data || []
   }

@@ -61,6 +61,7 @@ export interface Game {
   console_type: ConsoleType
   rom_path: string
   cover_url?: string
+  archived: boolean
   created_at: string
   updated_at: string
 }
