@@ -78,6 +78,19 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
   useEffect(() => {
+    if (!loaded) return
+    const gameKeys = Object.keys(SUPPORTED_CONSOLES[game.console_type]?.controls || {})
+    const keysToBlock = new Set([...gameKeys, ' '])
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (keysToBlock.has(e.key)) {
+        e.preventDefault()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+  }, [loaded, game.console_type])
+
+  useEffect(() => {
     if (!romUrl) return
     if (initialized.current) return
     initialized.current = true
