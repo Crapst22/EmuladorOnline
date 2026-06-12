@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { BITTO_SYSTEM_PROMPT } from '@/lib/bitto-prompt'
 
+const GROQ_API_BASE = 'https://api.groq.com/openai/v1'
+
 export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json()
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'GEMINI_API_KEY no configurada. Agrégala en .env.local' },
+        { error: 'GROQ_API_KEY no configurada. Agrégala en .env.local' },
         { status: 500 },
       )
     }
@@ -16,34 +18,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Mensajes inválidos' }, { status: 400 })
     }
 
-    const contents = messages.map((m: { role: string; content: string }) => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }],
-    }))
+    const groqMessages = [
+      { role: 'system', content: BITTO_SYSTEM_PROMPT },
+      ...messages.map((m: { role: string; content: string }) => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content,
+      })),
+    ]
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: BITTO_SYSTEM_PROMPT }],
-          },
-          contents,
-          generationConfig: {
-            temperature: 0.9,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 1024,
-          },
-        }),
+    const response = await fetch(`${GROQ_API_BASE}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
-    )
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: groqMessages,
+        temperature: 0.9,
+        max_tokens: 1024,
+        top_p: 0.95,
+      }),
+    })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Gemini API error:', response.status, errorText)
+      console.error('Groq API error:', response.status, errorText)
       return NextResponse.json(
         { error: 'Error al comunicarse con los cartuchos cósmicos' },
         { status: 502 },
@@ -52,19 +52,9 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json()
 
-    const candidate = data.candidates?.[0]
-    const text = candidate?.content?.parts?.[0]?.text
+    const text = data.choices?.[0]?.message?.content
 
     if (!text) {
-      const blockReason = candidate?.finishReason
-      if (blockReason === 'SAFETY') {
-        return NextResponse.json({
-          message: {
-            content:
-              'Mmm... mis archivos antiguos se niegan a revelar esa información. ¿Podemos hablar de otra cosa?',
-          },
-        })
-      }
       return NextResponse.json(
         { error: 'Respuesta vacía de la IA' },
         { status: 502 },
