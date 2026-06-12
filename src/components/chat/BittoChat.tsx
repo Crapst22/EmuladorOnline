@@ -252,8 +252,12 @@ export default function BittoChat() {
         onMouseDown={() => inputRef.current?.focus()}
       >
         <div className="flex items-center gap-2 border-b border-retro-gold/30 bg-gradient-to-b from-retro-blue-deep/98 to-retro-blue-dark/98 px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-retro-gold/50 bg-retro-gold/20">
-            <Bot className="h-4 w-4 text-retro-gold" />
+          <div className="h-8 w-8 overflow-hidden rounded-full border-2 border-retro-gold/70">
+            <img
+              src="/bitto-perfil.jpg"
+              alt="Bitto"
+              className="h-full w-full object-cover"
+            />
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="font-pixel text-[0.5rem] leading-tight text-retro-gold">
@@ -287,8 +291,12 @@ export default function BittoChat() {
               style={{ animationDuration: '0.3s' }}
             >
               {msg.role === 'assistant' && (
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-retro-gold/50 bg-retro-gold/20">
-                  <Bot className="h-3.5 w-3.5 text-retro-gold" />
+                <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full border-2 border-retro-gold/50">
+                  <img
+                    src="/bitto-perfil.jpg"
+                    alt="Bitto"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               )}
               <div
@@ -305,8 +313,12 @@ export default function BittoChat() {
           ))}
           {isLoading && (
             <div className="flex animate-slide-up gap-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-retro-gold/50 bg-retro-gold/20">
-                <Bot className="h-3.5 w-3.5 text-retro-gold" />
+              <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full border-2 border-retro-gold/50">
+                <img
+                  src="/bitto-perfil.jpg"
+                  alt="Bitto"
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div className="rounded-lg border border-retro-gold/20 bg-retro-blue-deep/80 px-4 py-3">
                 <div className="retro-spinner !h-5 !w-5" />
