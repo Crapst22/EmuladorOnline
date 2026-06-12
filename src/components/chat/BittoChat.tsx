@@ -24,7 +24,7 @@ export default function BittoChat() {
   const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const cursorRef = useRef({ start: 0, end: 0 })
   const sendRef = useRef(() => {})
 
@@ -79,6 +79,13 @@ export default function BittoChat() {
       input.removeEventListener('keyup', track)
     }
   }, [isOpen])
+
+  useEffect(() => {
+    const ta = inputRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'
+  }, [input])
 
   useEffect(() => {
     if (!isOpen) return
@@ -316,15 +323,20 @@ export default function BittoChat() {
             }}
             className="flex gap-2"
           >
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
               placeholder="Escribe tu mensaje..."
-              className="min-w-0 flex-1 rounded border-2 border-retro-gold/30 bg-retro-blue-deep/90 px-3 py-2 font-retro text-sm text-retro-gold shadow-inner outline-none transition-all placeholder:text-retro-gold/30 focus:border-retro-gold focus:shadow-[0_0_8px_rgba(255,215,0,0.2)]"
+              rows={1}
+              className="min-w-0 flex-1 resize-none rounded border-2 border-retro-gold/30 bg-retro-blue-deep/90 px-3 py-2 font-retro text-sm text-retro-gold shadow-inner outline-none transition-all placeholder:text-retro-gold/30 focus:border-retro-gold focus:shadow-[0_0_8px_rgba(255,215,0,0.2)]"
               disabled={isLoading}
-              autoComplete="off"
             />
             <button
               type="submit"

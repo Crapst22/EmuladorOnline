@@ -35,9 +35,9 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: groqMessages,
-        temperature: 0.9,
-        max_tokens: 1024,
-        top_p: 0.95,
+        temperature: 0.5,
+        max_tokens: 400,
+        top_p: 0.9,
       }),
     })
 
