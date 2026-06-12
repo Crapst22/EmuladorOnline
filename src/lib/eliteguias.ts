@@ -30,10 +30,7 @@ function extractGuides(html: string): { title: string; url: string }[] {
   }
 
   for (const link of links) {
-    if (
-      link.href.startsWith('/guias/') &&
-      link.text.toLowerCase().includes('guía')
-    ) {
+    if (link.href.match(/^\/guias\/[a-z0-9]\//i)) {
       const fullUrl = link.href.startsWith('http')
         ? link.href
         : `${BASE_URL}${link.href}`
@@ -102,11 +99,18 @@ function extractArticleContent(html: string): string {
 }
 
 export async function searchGuide(
-  gameName: string,
+  userMessage: string,
 ): Promise<{ title: string; url: string } | null> {
   try {
-    const query = gameName.replace(/guía|guia|tutorial|como\s*paso/gi, '').trim()
-    if (!query) return null
+    const gameMatch = userMessage.match(
+      /(?:guía|guia|tutorial|ayuda)\s+(?:de|para|del|con)\s+(.+)/i,
+    )
+    const query = (gameMatch?.[1] ?? userMessage)
+      .replace(/guía|guia|tutorial|como\s*paso|cómo\s*paso|quiero|una|un|el|la|los|las|de|del|para|por\s*favor|please/gi, '')
+      .replace(/[¿?¡!.,;:]/g, '')
+      .trim()
+
+    if (!query || query.length < 2) return null
 
     const res = await fetch(
       `${SEARCH_URL}${encodeURIComponent(query)}`,
