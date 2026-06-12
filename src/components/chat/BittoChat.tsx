@@ -20,11 +20,13 @@ export default function BittoChat() {
   const [messages, setMessages] = useState<Message[]>([WELCOME])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (isOpen && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages, isOpen])
 
   const handleSend = useCallback(async () => {
     const text = input.trim()
@@ -74,7 +76,7 @@ export default function BittoChat() {
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
-          'fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center',
+          'fixed bottom-12 right-12 z-50 flex h-14 w-14 items-center justify-center',
           'retro-btn !rounded-full !p-0',
           'transition-all duration-300 hover:scale-110',
           isOpen && 'pointer-events-none scale-0 opacity-0',
@@ -86,14 +88,14 @@ export default function BittoChat() {
 
       <div
         className={cn(
-          'fixed bottom-6 right-6 z-50 flex w-[380px] flex-col',
+          'fixed bottom-12 right-12 z-50 flex w-[380px] flex-col',
           'retro-panel',
           'transition-all duration-300 origin-bottom-right',
           isOpen
             ? 'pointer-events-auto scale-100 opacity-100'
             : 'pointer-events-none scale-95 opacity-0',
         )}
-        style={{ height: 540, maxHeight: 'calc(100vh - 4rem)' }}
+        style={{ height: 540, maxHeight: 'calc(100vh - 8rem)' }}
       >
         <div className="retro-panel-dark flex items-center gap-2 border-b border-retro-gold/30 px-4 py-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-retro-gold/50 bg-retro-gold/20">
@@ -117,7 +119,10 @@ export default function BittoChat() {
           </button>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-3">
+        <div
+          ref={scrollRef}
+          className="flex-1 space-y-3 overflow-y-auto p-3"
+        >
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -154,7 +159,6 @@ export default function BittoChat() {
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         <div className="border-t border-retro-gold/30 p-3">
