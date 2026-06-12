@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { Bot, X, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,17 +17,46 @@ const WELCOME: Message = {
 }
 
 export default function BittoChat() {
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([WELCOME])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (isOpen && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    if (pathname.startsWith('/play/')) {
+      setIsOpen(false)
     }
+  }, [pathname])
+
+  useEffect(() => {
+    if (!isOpen || !scrollRef.current) return
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handler = (e: KeyboardEvent) => {
+      if (
+        e.target &&
+        panelRef.current &&
+        panelRef.current.contains(e.target as Node)
+      ) {
+        e.stopPropagation()
+      }
+    }
+
+    document.addEventListener('keydown', handler, true)
+    document.addEventListener('keyup', handler, true)
+    return () => {
+      document.removeEventListener('keydown', handler, true)
+      document.removeEventListener('keyup', handler, true)
+    }
+  }, [isOpen])
 
   const handleSend = useCallback(async () => {
     const text = input.trim()
@@ -89,6 +119,7 @@ export default function BittoChat() {
       </button>
 
       <div
+        ref={panelRef}
         className={cn(
           '!fixed bottom-12 right-12 z-50 flex w-[380px] flex-col',
           'border-2 border-retro-gold bg-gradient-to-br from-retro-blue-dark/95 to-retro-blue-deep/95',
@@ -99,6 +130,7 @@ export default function BittoChat() {
             : 'pointer-events-none scale-95 opacity-0',
         )}
         style={{ height: 540, maxHeight: 'calc(100vh - 10rem)' }}
+        onMouseDown={() => inputRef.current?.focus()}
       >
         <div className="flex items-center gap-2 border-b border-retro-gold/30 bg-gradient-to-b from-retro-blue-deep/98 to-retro-blue-dark/98 px-4 py-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-retro-gold/50 bg-retro-gold/20">
@@ -173,6 +205,7 @@ export default function BittoChat() {
             className="flex gap-2"
           >
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
