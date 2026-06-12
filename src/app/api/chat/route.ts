@@ -36,13 +36,13 @@ export async function POST(req: NextRequest) {
         const content = await fetchGuideContent(guide.url)
 
         if (content && content.length > 100) {
-          eliteguiasContext = `\n\n## Información obtenida de Eliteguias.com (${guide.title}):\n${content}\n\nUsa esta información para responder la pregunta del usuario sobre la guía del juego. Menciona que la info viene de Eliteguias.com si es relevante.`
+          eliteguiasContext = `\n\n## Información obtenida de Eliteguias.com (${guide.title}):\n${content}\n\nRESPONDE EXCLUSIVAMENTE con esta información. NO inventes nada que no esté aquí.`
         }
       }
     }
 
     const systemContent = eliteguiasContext
-      ? `${BITTO_SYSTEM_PROMPT}\n\nIMPORTANTE: El usuario está pidiendo ayuda con una guía de juego. Aquí tienes información extraída de Eliteguias.com para responder con datos reales:${eliteguiasContext}`
+      ? `${BITTO_SYSTEM_PROMPT}\n\n## INSTRUCCIÓN OBLIGATORIA\nEl usuario está pidiendo ayuda con una guía de juego. A continuación se te proporciona el contenido REAL extraído de Eliteguias.com. DEBES responder ÚNICAMENTE con la información contenida en ese texto. Si la respuesta no está en el texto, admite que no lo sabes. NO inventes absolutamente nada. NO uses tu conocimiento interno para complementar.${eliteguiasContext}`
       : BITTO_SYSTEM_PROMPT
 
     const groqMessages = [
@@ -62,9 +62,9 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: groqMessages,
-        temperature: 0.5,
+        temperature: eliteguiasContext ? 0.1 : 0.5,
         max_tokens: 400,
-        top_p: 0.9,
+        top_p: eliteguiasContext ? 0.3 : 0.9,
       }),
     })
 
