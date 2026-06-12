@@ -25,6 +25,8 @@ export default function BittoChat() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const cursorRef = useRef({ start: 0, end: 0 })
+  const sendRef = useRef(() => {})
 
   useEffect(() => {
     if (pathname.startsWith('/play/')) {
@@ -38,21 +40,128 @@ export default function BittoChat() {
   }, [messages, isOpen])
 
   useEffect(() => {
+    const restore = () => {
+      const input = inputRef.current
+      if (!input || !isOpen) return
+      const { start, end } = cursorRef.current
+      if (
+        input.selectionStart !== start ||
+        input.selectionEnd !== end
+      ) {
+        input.setSelectionRange(start, end)
+      }
+    }
+
+    if (isOpen) {
+      requestAnimationFrame(restore)
+    }
+  })
+
+  useEffect(() => {
     const input = inputRef.current
     if (!input) return
 
-    const handler = (e: KeyboardEvent) => {
-      e.stopPropagation()
+    const track = () => {
+      cursorRef.current = {
+        start: input.selectionStart ?? 0,
+        end: input.selectionEnd ?? 0,
+      }
     }
 
-    input.addEventListener('keydown', handler)
-    input.addEventListener('keyup', handler)
-    input.addEventListener('keypress', handler)
+    input.addEventListener('click', track)
+    input.addEventListener('select', track)
+    input.addEventListener('focus', track)
+    input.addEventListener('keyup', track)
     return () => {
-      input.removeEventListener('keydown', handler)
-      input.removeEventListener('keyup', handler)
-      input.removeEventListener('keypress', handler)
+      input.removeEventListener('click', track)
+      input.removeEventListener('select', track)
+      input.removeEventListener('focus', track)
+      input.removeEventListener('keyup', track)
     }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handler = (e: KeyboardEvent) => {
+      if (!panelRef.current?.contains(e.target as Node)) return
+
+      e.stopPropagation()
+
+      if (e.ctrlKey || e.altKey || e.metaKey) return
+
+      if (e.key.length === 1) {
+        e.preventDefault()
+        const { start, end } = cursorRef.current
+        setInput((prev) => prev.slice(0, start) + e.key + prev.slice(end))
+        const pos = start + 1
+        cursorRef.current = { start: pos, end: pos }
+        return
+      }
+
+      const { start, end } = cursorRef.current
+      const value = inputRef.current?.value ?? ''
+
+      switch (e.key) {
+        case 'Backspace': {
+          e.preventDefault()
+          if (start !== end) {
+            setInput((prev) => prev.slice(0, start) + prev.slice(end))
+            cursorRef.current = { start, end: start }
+          } else if (start > 0) {
+            setInput((prev) => prev.slice(0, start - 1) + prev.slice(start))
+            cursorRef.current = { start: start - 1, end: start - 1 }
+          }
+          break
+        }
+        case 'Delete': {
+          e.preventDefault()
+          if (start !== end) {
+            setInput((prev) => prev.slice(0, start) + prev.slice(end))
+            cursorRef.current = { start, end: start }
+          } else if (start < value.length) {
+            setInput((prev) => prev.slice(0, start) + prev.slice(start + 1))
+            cursorRef.current = { start, end: start }
+          }
+          break
+        }
+        case 'Enter': {
+          e.preventDefault()
+          if (inputRef.current?.value.trim()) {
+            sendRef.current()
+          }
+          break
+        }
+        case 'ArrowLeft': {
+          e.preventDefault()
+          if (start > 0) {
+            cursorRef.current = { start: start - 1, end: start - 1 }
+          }
+          break
+        }
+        case 'ArrowRight': {
+          e.preventDefault()
+          if (start < value.length) {
+            cursorRef.current = { start: start + 1, end: start + 1 }
+          }
+          break
+        }
+        case 'Home': {
+          e.preventDefault()
+          cursorRef.current = { start: 0, end: 0 }
+          break
+        }
+        case 'End': {
+          e.preventDefault()
+          const len = value.length
+          cursorRef.current = { start: len, end: len }
+          break
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handler, true)
+    return () => window.removeEventListener('keydown', handler, true)
   }, [isOpen])
 
   const handleSend = useCallback(async () => {
@@ -62,6 +171,7 @@ export default function BittoChat() {
     const userMsg: Message = { role: 'user', content: text }
     setMessages((prev) => [...prev, userMsg])
     setInput('')
+    cursorRef.current = { start: 0, end: 0 }
     setIsLoading(true)
 
     try {
@@ -95,8 +205,13 @@ export default function BittoChat() {
       ])
     } finally {
       setIsLoading(false)
+      inputRef.current?.focus()
     }
   }, [input, isLoading, messages])
+
+  useEffect(() => {
+    sendRef.current = handleSend
+  })
 
   return (
     <>
@@ -209,6 +324,7 @@ export default function BittoChat() {
               placeholder="Escribe tu mensaje..."
               className="min-w-0 flex-1 rounded border-2 border-retro-gold/30 bg-retro-blue-deep/90 px-3 py-2 font-retro text-sm text-retro-gold shadow-inner outline-none transition-all placeholder:text-retro-gold/30 focus:border-retro-gold focus:shadow-[0_0_8px_rgba(255,215,0,0.2)]"
               disabled={isLoading}
+              autoComplete="off"
             />
             <button
               type="submit"
