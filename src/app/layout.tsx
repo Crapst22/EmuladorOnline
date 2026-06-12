@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import PresencePing from '@/components/PresencePing'
+import BittoChat from '@/components/chat/BittoChat'
 
 export const metadata: Metadata = {
   title: 'RetroVerse',
@@ -25,6 +26,7 @@ export default function RootLayout({
         <div className="vignette" />
         {children}
         <Toaster />
+        <BittoChat />
       </body>
     </html>
   )
