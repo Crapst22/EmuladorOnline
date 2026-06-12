@@ -128,7 +128,7 @@ function extractArticleContent(html: string): string {
   return meaningful.slice(0, 80).join('\n').slice(0, 5000)
 }
 
-function extractGameName(text: string): string | null {
+export function extractGameName(text: string): string | null {
   const clean = text.toLowerCase().trim()
 
   const gameKeys = Object.keys(KNOWN_GUIDES)
@@ -233,14 +233,18 @@ function scoreSectionRelevance(
 export async function searchGuide(
   userMessage: string,
 ): Promise<{ title: string; url: string } | null> {
-  try {
-    const gameKey = extractGameName(userMessage)
-    if (!gameKey) return null
+  const gameKey = extractGameName(userMessage)
+  if (!gameKey) return null
+  return searchGuideByKey(gameKey, userMessage)
+}
 
+export async function searchGuideByKey(
+  gameKey: string,
+  userMessage: string,
+): Promise<{ title: string; url: string } | null> {
+  try {
     const guidePath = KNOWN_GUIDES[gameKey]
-    if (!guidePath) {
-      return null
-    }
+    if (!guidePath) return null
 
     const res = await fetch(`${BASE_URL}${guidePath}`, {
       headers: {
@@ -295,4 +299,16 @@ export async function fetchGuideContent(
 
 export function shouldSearchEliteguias(text: string): boolean {
   return extractGameName(text) !== null
+}
+
+export function findGameInMessages(
+  messages: { role: string; content: string }[],
+): string | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') {
+      const name = extractGameName(messages[i].content)
+      if (name) return name
+    }
+  }
+  return null
 }

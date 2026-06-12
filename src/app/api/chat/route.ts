@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { BITTO_SYSTEM_PROMPT } from '@/lib/bitto-prompt'
 import {
-  shouldSearchEliteguias,
-  searchGuide,
+  searchGuideByKey,
   fetchGuideContent,
+  findGameInMessages,
+  extractGameName,
 } from '@/lib/eliteguias'
 
 const GROQ_API_BASE = 'https://api.groq.com/openai/v1'
@@ -26,11 +27,16 @@ export async function POST(req: NextRequest) {
     const lastMessage = messages[messages.length - 1]
     let eliteguiasContext = ''
 
-    if (
-      lastMessage?.role === 'user' &&
-      shouldSearchEliteguias(lastMessage.content)
-    ) {
-      const guide = await searchGuide(lastMessage.content)
+    const currentGame =
+      lastMessage?.role === 'user'
+        ? extractGameName(lastMessage.content)
+        : null
+    const historyGame = currentGame ? null : findGameInMessages(messages)
+    const gameKey = currentGame || historyGame
+
+    if (gameKey) {
+      const userMsg = lastMessage?.role === 'user' ? lastMessage.content : gameKey
+      const guide = await searchGuideByKey(gameKey, userMsg)
 
       if (guide) {
         const content = await fetchGuideContent(guide.url)
