@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const systemContent = eliteguiasContext
-      ? `${BITTO_SYSTEM_PROMPT}\n\n## INSTRUCCIÓN OBLIGATORIA\nEl usuario está pidiendo ayuda con una guía de juego. A continuación se te proporciona el contenido REAL extraído de Eliteguias.com. DEBES responder ÚNICAMENTE con la información contenida en ese texto. Si la respuesta no está en el texto, admite que no lo sabes. NO inventes absolutamente nada. NO uses tu conocimiento interno para complementar.${eliteguiasContext}`
+      ? `${BITTO_SYSTEM_PROMPT}\n\n## INSTRUCCIÓN OBLIGATORIA\nEl usuario está pidiendo ayuda con una guía de juego. A continuación se te proporciona el contenido REAL extraído de Eliteguias.com. DEBES responder ÚNICAMENTE con la información contenida en ese texto. Si la respuesta no está en el texto, admite que no lo sabes. NO inventes absolutamente nada. NO uses tu conocimiento interno para complementar. La regla de "RESPUESTAS CORTAS" (máximo 2-4 oraciones) NO APLICA cuando tienes contenido de guía — puedes extenderte lo necesario para dar toda la información relevante.${eliteguiasContext}`
       : BITTO_SYSTEM_PROMPT
 
     const groqMessages = [
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         model: 'llama-3.3-70b-versatile',
         messages: groqMessages,
         temperature: eliteguiasContext ? 0.1 : 0.5,
-        max_tokens: 400,
+        max_tokens: eliteguiasContext ? 1000 : 400,
         top_p: eliteguiasContext ? 0.3 : 0.9,
       }),
     })
