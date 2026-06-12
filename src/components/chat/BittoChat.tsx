@@ -38,23 +38,20 @@ export default function BittoChat() {
   }, [messages, isOpen])
 
   useEffect(() => {
-    if (!isOpen) return
+    const input = inputRef.current
+    if (!input) return
 
     const handler = (e: KeyboardEvent) => {
-      if (
-        e.target &&
-        panelRef.current &&
-        panelRef.current.contains(e.target as Node)
-      ) {
-        e.stopPropagation()
-      }
+      e.stopPropagation()
     }
 
-    document.addEventListener('keydown', handler, true)
-    document.addEventListener('keyup', handler, true)
+    input.addEventListener('keydown', handler)
+    input.addEventListener('keyup', handler)
+    input.addEventListener('keypress', handler)
     return () => {
-      document.removeEventListener('keydown', handler, true)
-      document.removeEventListener('keyup', handler, true)
+      input.removeEventListener('keydown', handler)
+      input.removeEventListener('keyup', handler)
+      input.removeEventListener('keypress', handler)
     }
   }, [isOpen])
 
