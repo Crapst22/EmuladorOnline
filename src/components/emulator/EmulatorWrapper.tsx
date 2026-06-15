@@ -77,14 +77,24 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
-  // Gamepad is handled natively by EmulatorJS. The bridge
-  // script (public/emulatorjs/src/gamepad.js) is loaded before
-  // loader.js so that window.GamepadHandler exists when the
-  // EmulatorJS constructor runs.  When GamepadHandler is present,
-  // the minified EmulatorJS wires up its own polling loop and
-  // button mapping via simulateInput — both buttons and analog
-  // sticks work natively with correct RetroArch indices for each
-  // core.
+  // Native gamepad handling is built into emulator.min.js.
+  // The GamepadHandler requires a user gesture (click) on the
+  // canvas before navigator.getGamepads() returns data.
+  // When useGamepad detects a connection, we focus the canvas
+  // to satisfy this requirement.
+
+  useEffect(() => {
+    if (!loaded || !gamepadConnected) return
+    const id = setInterval(() => {
+      const canvas = document.querySelector<HTMLCanvasElement>('#game-emulator canvas')
+      if (canvas) {
+        canvas.focus()
+        canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        clearInterval(id)
+      }
+    }, 200)
+    return () => clearInterval(id)
+  }, [loaded, gamepadConnected])
 
   useEffect(() => {
     if (!loaded) return
@@ -127,51 +137,38 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         return
       }
 
-      const loadGamepad = () => new Promise<void>(resolve => {
-        const s = document.createElement('script')
-        s.src = '/emulatorjs/src/gamepad.js'
-        s.async = false
-        s.onload = () => resolve()
-        s.onerror = () => resolve()
-        document.head.appendChild(s)
-      })
+      const script = document.createElement('script')
+      script.src = '/emulatorjs/loader.js'
+      script.async = false
+      script.onload = async () => {
+        setLoaded(true)
+        const { data: { user } } = await supabaseRef.current.auth.getUser()
+        if (user) {
+          const { data: existing } = await supabaseRef.current
+            .from('play_sessions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('game_id', game.id)
+            .is('ended_at', null)
+            .maybeSingle()
 
-      ;(async () => {
-        await loadGamepad()
-
-        const script = document.createElement('script')
-        script.src = '/emulatorjs/loader.js'
-        script.async = false
-        script.onload = async () => {
-          setLoaded(true)
-          const { data: { user } } = await supabaseRef.current.auth.getUser()
-          if (user) {
-            const { data: existing } = await supabaseRef.current
+          if (existing) {
+            sessionIdRef.current = existing.id
+          } else {
+            const { data: sessionData } = await supabaseRef.current
               .from('play_sessions')
+              .insert({ user_id: user.id, game_id: game.id })
               .select('id')
-              .eq('user_id', user.id)
-              .eq('game_id', game.id)
-              .is('ended_at', null)
-              .maybeSingle()
-
-            if (existing) {
-              sessionIdRef.current = existing.id
-            } else {
-              const { data: sessionData } = await supabaseRef.current
-                .from('play_sessions')
-                .insert({ user_id: user.id, game_id: game.id })
-                .select('id')
-                .single()
-              if (sessionData) sessionIdRef.current = sessionData.id
-            }
+              .single()
+            if (sessionData) sessionIdRef.current = sessionData.id
           }
-
-          const pingInterval = setInterval(() => pingLastSeen(), 8_000)
-          cleanups.push(() => clearInterval(pingInterval))
         }
-        script.onerror = () => { setError('Error al cargar el emulador') }
-        document.body.appendChild(script)
-      })()
+
+        const pingInterval = setInterval(() => pingLastSeen(), 8_000)
+        cleanups.push(() => clearInterval(pingInterval))
+      }
+      script.onerror = () => { setError('Error al cargar el emulador') }
+      document.body.appendChild(script)
 
       const checkEmulator = setInterval(() => {
         const emu = (window as any).EJS_emulator
