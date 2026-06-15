@@ -418,8 +418,25 @@ class EJS_GameManager {
         if (save !== false) {
             this.saveSaveFiles();
         }
-        const exists = this.FS.analyzePath(this.getSaveFilePath()).exists;
-        return (exists ? this.FS.readFile(this.getSaveFilePath()) : null);
+        const path = this.getSaveFilePath();
+        if (path && this.FS.analyzePath(path).exists) {
+            return this.FS.readFile(path);
+        }
+        try {
+            const savesDir = "/data/saves";
+            const entries = this.FS.readdir(savesDir);
+            for (const name of entries) {
+                if (name === "." || name === "..") continue;
+                const fullPath = savesDir + "/" + name;
+                try {
+                    const stat = this.FS.stat(fullPath);
+                    if (this.FS.isFile(stat.mode)) {
+                        return this.FS.readFile(fullPath);
+                    }
+                } catch(e) {}
+            }
+        } catch(e) {}
+        return null;
     }
     loadSaveFiles() {
         this.clearEJSResetTimer();

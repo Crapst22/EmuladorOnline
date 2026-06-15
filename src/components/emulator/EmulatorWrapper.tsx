@@ -189,8 +189,28 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             srmInjected = true
             try {
               const saveFilePath = emu.gameManager.getSaveFilePath()
-              emu.gameManager.writeFile(saveFilePath, srmData)
-              emu.gameManager.loadSaveFiles()
+              let injected = false
+              try {
+                emu.gameManager.writeFile(saveFilePath, srmData)
+                injected = true
+              } catch (e) {
+                console.warn('Ruta principal de save no válida:', e)
+              }
+              const altExtensions = ['.srm', '.eep', '.sra', '.fla']
+              const basePath = saveFilePath ? saveFilePath.replace(/\.\w+$/, '') : '/data/saves/save'
+              for (const ext of altExtensions) {
+                const altPath = basePath + ext
+                if (altPath === saveFilePath) continue
+                try {
+                  emu.gameManager.writeFile(altPath, srmData)
+                  injected = true
+                } catch (e) {}
+              }
+              if (injected) {
+                emu.gameManager.loadSaveFiles()
+              } else {
+                throw new Error('No se pudo escribir la save en ninguna ruta')
+              }
             } catch (e: any) {
               srmInjected = false
               console.error('Error al inyectar SRM (intento ' + attempt + '):', e)
