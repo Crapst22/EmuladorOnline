@@ -1,4 +1,4 @@
-export type ConsoleType = 'snes' | 'gba'
+export type ConsoleType = 'snes' | 'gba' | 'n64'
 
 export interface ConsoleDefinition {
   id: ConsoleType
@@ -48,6 +48,29 @@ export const SUPPORTED_CONSOLES: Record<ConsoleType, ConsoleDefinition> = {
       Shift: 'select',
       q: 'l',
       w: 'r',
+    },
+  },
+  n64: {
+    id: 'n64',
+    name: 'Nintendo 64',
+    emulatorCore: 'mupen64plus',
+    extensions: ['.n64', '.z64', '.v64'],
+    saveFormat: 'srm',
+    controls: {
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+      z: 'b',
+      x: 'a',
+      a: 'z',
+      s: 'start',
+      q: 'l',
+      w: 'r',
+      e: 'c-up',
+      d: 'c-down',
+      c: 'c-left',
+      r: 'c-right',
     },
   },
 }

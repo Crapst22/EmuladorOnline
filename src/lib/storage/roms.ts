@@ -1,7 +1,7 @@
 'use server'
 
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/constants'
+import { MAX_ROM_SIZE, MAX_N64_ROM_SIZE, ALLOWED_ROM_EXTENSIONS, STORAGE_BUCKETS } from '@/lib/constants'
 import { cleanupOldSaves } from '@/lib/storage/saves'
 import { revalidatePath } from 'next/cache'
 import crypto from 'crypto'
@@ -22,13 +22,27 @@ export async function uploadRom(formData: FormData) {
   if (!file) return { error: 'No se proporcionó archivo' }
   if (!title) return { error: 'El título es requerido' }
 
-  if (file.size > MAX_ROM_SIZE) {
+  if (consoleType === 'n64') {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.is_admin) {
+      return { error: 'Solo los administradores pueden subir ROMs de Nintendo 64' }
+    }
+
+    if (file.size > MAX_N64_ROM_SIZE) {
+      return { error: `El archivo excede el tamaño máximo permitido para N64 (${MAX_N64_ROM_SIZE / 1024 / 1024}MB)` }
+    }
+  } else if (file.size > MAX_ROM_SIZE) {
     return { error: 'El archivo excede el tamaño máximo permitido (50MB)' }
   }
 
   const extension = '.' + file.name.split('.').pop()?.toLowerCase()
   if (!ALLOWED_ROM_EXTENSIONS.includes(extension)) {
-    return { error: 'Tipo de archivo no permitido. Use: .smc, .sfc, .fig' }
+    return { error: 'Tipo de archivo no permitido. Use: .smc, .sfc, .fig, .gba, .n64, .z64, .v64' }
   }
 
   const buffer = Buffer.from(await file.arrayBuffer())

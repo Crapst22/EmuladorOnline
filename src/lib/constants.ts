@@ -1,5 +1,6 @@
 export const MAX_ROM_SIZE = 50 * 1024 * 1024
-export const ALLOWED_ROM_EXTENSIONS = ['.smc', '.sfc', '.fig', '.gba']
+export const MAX_N64_ROM_SIZE = 300 * 1024 * 1024
+export const ALLOWED_ROM_EXTENSIONS = ['.smc', '.sfc', '.fig', '.gba', '.n64', '.z64', '.v64']
 export const MAX_SAVE_SIZE = 10 * 1024 * 1024
 export const MAX_SAVES_PER_GAME = 3
 export const AUTO_SAVE_INTERVAL = 30000

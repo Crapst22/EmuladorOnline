@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Upload, File, X } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Upload, File, X, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { MAX_ROM_SIZE, ALLOWED_ROM_EXTENSIONS } from '@/lib/constants'
+import { MAX_ROM_SIZE, MAX_N64_ROM_SIZE, ALLOWED_ROM_EXTENSIONS } from '@/lib/constants'
 import { SUPPORTED_CONSOLES } from '@/types'
 import type { ConsoleType } from '@/types'
 
@@ -24,8 +24,21 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
   const [consoleType, setConsoleType] = useState<ConsoleType>('snes')
   const [loading, setLoading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const { toast } = useToast()
   const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from('users').select('is_admin').eq('id', user.id).single()
+          .then(({ data }) => setIsAdmin(data?.is_admin || false))
+      }
+    })
+  }, [supabase])
+
+  const maxSizeForConsole = (type: ConsoleType) =>
+    type === 'n64' ? MAX_N64_ROM_SIZE : MAX_ROM_SIZE
 
   const validateFile = useCallback((f: File, consoleType: ConsoleType) => {
     const ext = '.' + f.name.split('.').pop()?.toLowerCase()
@@ -34,8 +47,9 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
       toast({ variant: 'error', title: 'ARCHIVO NO VALIDO', description: `${SUPPORTED_CONSOLES[consoleType]?.name} solo acepta: ${allowedForConsole.join(', ')}` })
       return false
     }
-    if (f.size > MAX_ROM_SIZE) {
-      toast({ variant: 'error', title: 'ARCHIVO MUY GRANDE', description: 'Maximo 50MB' })
+    const maxSize = maxSizeForConsole(consoleType)
+    if (f.size > maxSize) {
+      toast({ variant: 'error', title: 'ARCHIVO MUY GRANDE', description: `Maximo ${maxSize / 1024 / 1024}MB para ${SUPPORTED_CONSOLES[consoleType]?.name}` })
       return false
     }
     return true
@@ -165,8 +179,8 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
           </div>
           <div className="space-y-2">
             <Label>PLATAFORMA</Label>
-            <div className="flex gap-2">
-              {(Object.entries(SUPPORTED_CONSOLES) as [ConsoleType, typeof SUPPORTED_CONSOLES[ConsoleType]][]).map(([key, console]) => (
+            <div className="flex gap-2 flex-wrap">
+              {(Object.entries(SUPPORTED_CONSOLES) as [ConsoleType, typeof SUPPORTED_CONSOLES[ConsoleType]][]).filter(([key]) => key !== 'n64' || isAdmin).map(([key, console]) => (
                 <button
                   key={key}
                   type="button"
@@ -177,6 +191,7 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
                       : 'border-[#FFD700]/20 text-[#808080] hover:border-[#FFD700]/40'
                   }`}
                 >
+                  {key === 'n64' && <Shield className="inline h-3 w-3 mr-1" />}
                   {console.name.toUpperCase()}
                 </button>
               ))}
@@ -204,7 +219,7 @@ export function UploadRom({ onUploadComplete }: UploadRomProps) {
                 <p className="font-retro text-base text-[#A0A0A0]">
                   Arrastra tu ROM aqui o haz clic para seleccionar
                 </p>
-                <p className="font-retro text-sm text-[#808080] mt-1">{SUPPORTED_CONSOLES[consoleType]?.extensions.join(', ')} (max 50MB)</p>
+                <p className="font-retro text-sm text-[#808080] mt-1">{SUPPORTED_CONSOLES[consoleType]?.extensions.join(', ')} (max {maxSizeForConsole(consoleType) / 1024 / 1024}MB)</p>
               </div>
             )}
             <input
