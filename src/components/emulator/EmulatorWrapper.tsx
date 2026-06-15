@@ -93,6 +93,35 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
     const prev = new Map<number, number>()
     const DEADZONE = 0.25
 
+    // Physical gamepad button index -> RetroArch input index
+    // Matches the native GamepadHandler mapping in emulator.min.js
+    const PHYSICAL_TO_RA = [
+      8,   // 0: A (Xbox south)   -> RetroArch A
+      0,   // 1: B (Xbox east)    -> RetroArch B
+      9,   // 2: X (Xbox west)    -> RetroArch X
+      1,   // 3: Y (Xbox north)   -> RetroArch Y
+      10,  // 4: LB               -> RetroArch L1
+      11,  // 5: RB               -> RetroArch R1
+      12,  // 6: LT               -> RetroArch L2
+      13,  // 7: RT               -> RetroArch R2
+      2,   // 8: Select           -> RetroArch Select
+      3,   // 9: Start            -> RetroArch Start
+      14,  // 10: L3              -> RetroArch L3
+      15,  // 11: R3              -> RetroArch R3
+      4,   // 12: D-Pad Up        -> RetroArch Up
+      5,   // 13: D-Pad Down      -> RetroArch Down
+      6,   // 14: D-Pad Left      -> RetroArch Left
+      7,   // 15: D-Pad Right     -> RetroArch Right
+    ]
+
+    // Each physical analog axis generates two RetroArch inputs (+/- direction)
+    const AXIS_MAP = [
+      { positive: 16, negative: 17 },  // Left stick X
+      { positive: 18, negative: 19 },  // Left stick Y
+      { positive: 20, negative: 21 },  // Right stick X
+      { positive: 22, negative: 23 },  // Right stick Y
+    ]
+
     const interval = setInterval(() => {
       if (!emu?.gameManager?.functions?.simulateInput) return
 
@@ -108,13 +137,19 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         emu.gameManager.simulateInput(0, idx, val)
       }
 
-      for (let i = 0; i <= 15; i++)
-        send(i, gamepad.buttons[i]?.pressed ? 1 : 0)
+      for (let i = 0; i < 16; i++)
+        send(PHYSICAL_TO_RA[i], gamepad.buttons[i]?.pressed ? 1 : 0)
 
-      for (let a = 0; a < 4; a++) {
-        const idx = 16 + a
-        const v = Math.abs(gamepad.axes[a] ?? 0) < DEADZONE ? 0 : (gamepad.axes[a] ?? 0)
-        send(idx, v)
+      for (let a = 0; a < AXIS_MAP.length; a++) {
+        const v = gamepad.axes[a] ?? 0
+        const { positive, negative } = AXIS_MAP[a]
+        if (Math.abs(v) < DEADZONE) {
+          send(positive, 0)
+          send(negative, 0)
+        } else {
+          send(positive, Math.max(0, v))
+          send(negative, Math.max(0, -v))
+        }
       }
     }, 16)
 
