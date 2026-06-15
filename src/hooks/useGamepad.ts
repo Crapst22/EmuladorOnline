@@ -1,67 +1,31 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-
-type GamepadButton = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'x' | 'y' | 'start' | 'select' | 'l' | 'r'
-
-const SNES_GAMEPAD_MAP: Record<number, GamepadButton> = {
-  12: 'up',
-  13: 'down',
-  14: 'left',
-  15: 'right',
-  0: 'b',
-  1: 'a',
-  3: 'y',
-  2: 'x',
-  9: 'start',
-  8: 'select',
-  4: 'l',
-  5: 'r',
-}
+import { useState, useEffect } from 'react'
 
 export function useGamepad() {
-  const [gamepadIndex, setGamepadIndex] = useState<number | null>(null)
-  const [pressedButtons, setPressedButtons] = useState<Set<GamepadButton>>(new Set())
-
-  const handleGamepadConnected = useCallback((e: GamepadEvent) => {
-    setGamepadIndex(e.gamepad.index)
-  }, [])
-
-  const handleGamepadDisconnected = useCallback(() => {
-    setGamepadIndex(null)
-    setPressedButtons(new Set())
-  }, [])
+  const [gamepadConnected, setGamepadConnected] = useState(false)
 
   useEffect(() => {
-    window.addEventListener('gamepadconnected', handleGamepadConnected as EventListener)
-    window.addEventListener('gamepaddisconnected', handleGamepadDisconnected as EventListener)
-
-    const interval = setInterval(() => {
-      if (gamepadIndex === null) return
-
+    const onConnect = () => setGamepadConnected(true)
+    const onDisconnect = () => {
       const gamepads = navigator.getGamepads()
-      const gamepad = gamepads[gamepadIndex]
+      const anyConnected = Array.from(gamepads).some(g => g !== null)
+      setGamepadConnected(anyConnected)
+    }
 
-      if (!gamepad) return
+    window.addEventListener('gamepadconnected', onConnect)
+    window.addEventListener('gamepaddisconnected', onDisconnect)
 
-      const pressed = new Set<GamepadButton>()
-
-      gamepad.buttons.forEach((button, index) => {
-        if (button.pressed) {
-          const mapped = SNES_GAMEPAD_MAP[index]
-          if (mapped) pressed.add(mapped)
-        }
-      })
-
-      setPressedButtons(pressed)
-    }, 16)
+    const gamepads = navigator.getGamepads()
+    if (gamepads && Array.from(gamepads).some(g => g !== null)) {
+      setGamepadConnected(true)
+    }
 
     return () => {
-      window.removeEventListener('gamepadconnected', handleGamepadConnected as EventListener)
-      window.removeEventListener('gamepaddisconnected', handleGamepadDisconnected as EventListener)
-      clearInterval(interval)
+      window.removeEventListener('gamepadconnected', onConnect)
+      window.removeEventListener('gamepaddisconnected', onDisconnect)
     }
-  }, [gamepadIndex, handleGamepadConnected, handleGamepadDisconnected])
+  }, [])
 
-  return { gamepadConnected: gamepadIndex !== null, pressedButtons }
+  return { gamepadConnected }
 }

@@ -79,6 +79,45 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
   useEffect(() => {
     if (!loaded) return
+
+    const prev = new Map<number, number>()
+    const THRESHOLD = 0.5
+    const DEADZONE = 0.25
+
+    const interval = setInterval(() => {
+      const emu = (window as any).EJS_emulator
+      if (!emu?.gameManager?.functions?.simulateInput) return
+
+      const gamepads = navigator.getGamepads()
+      if (!gamepads) return
+      const gamepad = Array.from(gamepads).find(g => g !== null)
+      if (!gamepad) return
+
+      const send = (idx: number, val: number) => {
+        const prevVal = prev.get(idx) ?? 0
+        if (prevVal === val) return
+        prev.set(idx, val)
+        emu.gameManager.simulateInput(0, idx, val)
+      }
+
+      for (let i = 0; i <= 11; i++) {
+        send(i, gamepad.buttons[i]?.pressed ? 1 : 0)
+      }
+
+      const ax = Math.abs(gamepad.axes[0] ?? 0) < DEADZONE ? 0 : (gamepad.axes[0] ?? 0)
+      const ay = Math.abs(gamepad.axes[1] ?? 0) < DEADZONE ? 0 : (gamepad.axes[1] ?? 0)
+
+      send(12, (gamepad.buttons[12]?.pressed ? 1 : 0) || (ay < -THRESHOLD ? 1 : 0))
+      send(13, (gamepad.buttons[13]?.pressed ? 1 : 0) || (ay > THRESHOLD ? 1 : 0))
+      send(14, (gamepad.buttons[14]?.pressed ? 1 : 0) || (ax < -THRESHOLD ? 1 : 0))
+      send(15, (gamepad.buttons[15]?.pressed ? 1 : 0) || (ax > THRESHOLD ? 1 : 0))
+    }, 16)
+
+    return () => clearInterval(interval)
+  }, [loaded])
+
+  useEffect(() => {
+    if (!loaded) return
     const gameKeys = Object.keys(SUPPORTED_CONSOLES[game.console_type]?.controls || {})
     const keysToBlock = new Set([...gameKeys, ' '])
     const handleKeyDown = (e: KeyboardEvent) => {
