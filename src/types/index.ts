@@ -53,7 +53,7 @@ export const SUPPORTED_CONSOLES: Record<ConsoleType, ConsoleDefinition> = {
   n64: {
     id: 'n64',
     name: 'Nintendo 64',
-    emulatorCore: 'mupen64plus',
+    emulatorCore: 'n64',
     extensions: ['.n64', '.z64', '.v64'],
     saveFormat: 'srm',
     controls: {
