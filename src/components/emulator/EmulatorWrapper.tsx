@@ -78,84 +78,11 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
   // Gamepad strategy:
-  //   The native GamepadHandler in emulator.min.js dispatches
-  //   events in a format that gamepadEvent can't parse, causing
+  //   The native GamepadHandler dispatches events with `gamepadIndex`
+  //   but gamepadEvent expects `event.gamepad.id`. This mismatch causes
   //   "Cannot read properties of undefined (reading 'id')".
-  //   We intercept window.EJS_emulator assignment and immediately
-  //   terminate() the native GamepadHandler loop, then replace it
-  //   with our own polling bridge (raw indices, no mapping).
-
-  useEffect(() => {
-    if (!loaded || !gamepadConnected) return
-    const emu = (window as any).EJS_emulator
-    if (!emu) return
-
-    const prev = new Map<number, number>()
-    const DEADZONE = 0.25
-
-    // Mirror the native GamepadHandler's label-based approach:
-    //   physical index -> label (getButtonLabel) -> controls[0] value2 -> RetroArch index
-    const physToRA: number[] = []
-    const gp = emu.gamepad
-    if (gp?.getButtonLabel) {
-      for (let p = 0; p < 16; p++) {
-        const label = gp.getButtonLabel(p)
-        if (!label) { physToRA[p] = -1; continue }
-        let found = -1
-        const ctrls = (emu as any).controllers?.[0] ?? (emu as any).controls?.[0] ?? (emu as any).defaultControllers?.[0]
-        if (ctrls) {
-          for (const [ri, ctrl] of Object.entries(ctrls)) {
-            if ((ctrl as any)?.value2 === label) { found = Number(ri); break }
-          }
-        }
-        physToRA[p] = found >= 0 ? found : p
-      }
-    } else {
-      for (let i = 0; i < 16; i++) physToRA[i] = i
-    }
-
-    // Each physical analog axis generates two RetroArch inputs (+/- direction)
-    const AXIS_MAP = [
-      { positive: 16, negative: 17 },
-      { positive: 18, negative: 19 },
-      { positive: 20, negative: 21 },
-      { positive: 22, negative: 23 },
-    ]
-
-    const interval = setInterval(() => {
-      if (!emu?.gameManager?.functions?.simulateInput) return
-
-      const gamepads = navigator.getGamepads()
-      if (!gamepads) return
-      const gamepad = Array.from(gamepads).find(g => g !== null)
-      if (!gamepad) return
-
-      const send = (idx: number, val: number) => {
-        if (idx < 0) return
-        const p = prev.get(idx) ?? 0
-        if (p === val) return
-        prev.set(idx, val)
-        emu.gameManager.simulateInput(0, idx, val)
-      }
-
-      for (let i = 0; i < 16; i++)
-        send(physToRA[i], gamepad.buttons[i]?.pressed ? 1 : 0)
-
-      for (let a = 0; a < AXIS_MAP.length; a++) {
-        const v = gamepad.axes[a] ?? 0
-        const { positive, negative } = AXIS_MAP[a]
-        if (Math.abs(v) < DEADZONE) {
-          send(positive, 0)
-          send(negative, 0)
-        } else {
-          send(positive, Math.max(0, v))
-          send(negative, Math.max(0, -v))
-        }
-      }
-    }, 16)
-
-    return () => clearInterval(interval)
-  }, [loaded, gamepadConnected])
+  //   We patch dispatchEvent on the native handler to inject
+  //   `gamepad: { id }` so gamepadEvent works correctly.
 
   useEffect(() => {
     if (!loaded) return
@@ -198,17 +125,24 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         return
       }
 
-      // Terminate native GamepadHandler immediately on creation
+      // Patch native GamepadHandler dispatchEvent to inject gamepad.id
+      // The native code sends { index, label, gamepadIndex } but
+      // gamepadEvent expects event.gamepad.id, causing a crash.
       let _EJS_emulator: any
       Object.defineProperty(window, 'EJS_emulator', {
         configurable: true,
         enumerable: true,
         get() { return _EJS_emulator },
         set(val: any) {
-          if (val?.gamepad?.terminate) {
-            val.gamepad.terminate()
-          }
           _EJS_emulator = val
+          if (val?.gamepad?.dispatchEvent) {
+            const orig = val.gamepad.dispatchEvent.bind(val.gamepad)
+            val.gamepad.dispatchEvent = (name: string, arg: any) => {
+              if (arg && arg.gamepadIndex != null)
+                arg.gamepad = { id: arg.gamepadIndex }
+              return orig(name, arg)
+            }
+          }
         },
       })
 
