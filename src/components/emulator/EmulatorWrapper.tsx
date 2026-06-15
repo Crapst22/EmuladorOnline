@@ -77,23 +77,53 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
-  // Native gamepad handling is built into emulator.min.js.
-  // The GamepadHandler requires a user gesture (click) on the
-  // canvas before navigator.getGamepads() returns data.
-  // When useGamepad detects a connection, we focus the canvas
-  // to satisfy this requirement.
+  // Gamepad strategy:
+  //   The native GamepadHandler in emulator.min.js has a bug:
+  //   gamepadEvent expects a property not sent by dispatchEvent.
+  //   We noop emu.gamepadEvent after load and use a direct
+  //   polling bridge instead (no mapping — raw indices).
 
   useEffect(() => {
     if (!loaded || !gamepadConnected) return
-    const id = setInterval(() => {
-      const canvas = document.querySelector<HTMLCanvasElement>('#game-emulator canvas')
-      if (canvas) {
-        canvas.focus()
-        canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-        clearInterval(id)
+    const emu = (window as any).EJS_emulator
+    if (!emu) return
+
+    // disable the broken native handler
+    const orig = emu.gamepadEvent
+    emu.gamepadEvent = () => {}
+
+    const prev = new Map<number, number>()
+    const DEADZONE = 0.25
+
+    const interval = setInterval(() => {
+      if (!emu?.gameManager?.functions?.simulateInput) return
+
+      const gamepads = navigator.getGamepads()
+      if (!gamepads) return
+      const gamepad = Array.from(gamepads).find(g => g !== null)
+      if (!gamepad) return
+
+      const send = (idx: number, val: number) => {
+        const p = prev.get(idx) ?? 0
+        if (p === val) return
+        prev.set(idx, val)
+        emu.gameManager.simulateInput(0, idx, val)
       }
-    }, 200)
-    return () => clearInterval(id)
+
+      for (let i = 0; i <= 15; i++)
+        send(i, gamepad.buttons[i]?.pressed ? 1 : 0)
+
+      for (let a = 0; a < 4; a++) {
+        const idx = 16 + a
+        const v = Math.abs(gamepad.axes[a] ?? 0) < DEADZONE ? 0 : (gamepad.axes[a] ?? 0)
+        send(idx, v)
+      }
+    }, 16)
+
+    return () => {
+      clearInterval(interval)
+      emu.gamepadEvent = orig
+    }
   }, [loaded, gamepadConnected])
 
   useEffect(() => {
