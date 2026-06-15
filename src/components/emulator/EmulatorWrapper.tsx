@@ -110,8 +110,11 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         emu.gameManager.simulateInput(0, idx, val)
       }
 
-      for (let i = 0; i <= 15; i++)
-        send(i, gamepad.buttons[i]?.pressed ? 1 : 0)
+      for (let i = 0; i <= 15; i++) {
+        const pressed = gamepad.buttons[i]?.pressed
+        if (pressed) console.debug('gamepad btn', i, 'pressed')
+        send(i, pressed ? 1 : 0)
+      }
 
       for (let a = 0; a < 4; a++) {
         const idx = 16 + a
