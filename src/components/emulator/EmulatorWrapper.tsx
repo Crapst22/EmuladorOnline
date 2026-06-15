@@ -48,10 +48,16 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   const { gamepadConnected } = useGamepad()
 
   const handleSave = useCallback(async () => {
+    console.log('[Save] ======= handleSave INICIADO =======')
     const emu = (window as any).EJS_emulator
-    if (!emu?.gameManager) return
+    if (!emu?.gameManager) {
+      console.warn('[Save] emu.gameManager no disponible')
+      return
+    }
     try {
+      console.log('[Save] Llamando getSaveFile()...')
       const srm = emu.gameManager.getSaveFile()
+      console.log('[Save] getSaveFile() retornó:', srm ? `Blob(${srm.length} bytes)` : 'null')
       if (srm) {
         const blob = new Blob([srm], { type: 'application/octet-stream' })
         await uploadSave(blob, 'srm')
@@ -249,7 +255,11 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           }
 
           const tryLoadState = () => {
-            if (!stateData || !emu.gameManager) return
+            if (!stateData || !emu.gameManager) {
+              console.log('[Start] tryLoadState saltado (sin stateData o sin gameManager)')
+              return
+            }
+            console.log('[Start] Programando carga de state en 2s, size:', stateData.length)
             setTimeout(() => {
               try {
                 emu.gameManager.loadState(stateData!)
@@ -271,6 +281,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
           }
 
           emu.on('start', () => {
+            console.log('[Start] Evento START disparado')
             configureN64Save()
             tryInjectSRM(0)
             tryLoadState()
