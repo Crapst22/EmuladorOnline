@@ -78,19 +78,17 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
   // Gamepad strategy:
-  //   The native GamepadHandler in emulator.min.js has a bug:
-  //   gamepadEvent expects a property not sent by dispatchEvent.
-  //   We noop emu.gamepadEvent after load and use a direct
-  //   polling bridge instead (no mapping — raw indices).
+  //   The native GamepadHandler in emulator.min.js dispatches
+  //   events in a format that gamepadEvent can't parse, causing
+  //   "Cannot read properties of undefined (reading 'id')".
+  //   We intercept window.EJS_emulator assignment and immediately
+  //   terminate() the native GamepadHandler loop, then replace it
+  //   with our own polling bridge (raw indices, no mapping).
 
   useEffect(() => {
     if (!loaded || !gamepadConnected) return
     const emu = (window as any).EJS_emulator
     if (!emu) return
-
-    // disable the broken native handler
-    const orig = emu.gamepadEvent
-    emu.gamepadEvent = () => {}
 
     const prev = new Map<number, number>()
     const DEADZONE = 0.25
@@ -110,11 +108,8 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         emu.gameManager.simulateInput(0, idx, val)
       }
 
-      for (let i = 0; i <= 15; i++) {
-        const pressed = gamepad.buttons[i]?.pressed
-        if (pressed) console.debug('gamepad btn', i, 'pressed')
-        send(i, pressed ? 1 : 0)
-      }
+      for (let i = 0; i <= 15; i++)
+        send(i, gamepad.buttons[i]?.pressed ? 1 : 0)
 
       for (let a = 0; a < 4; a++) {
         const idx = 16 + a
@@ -123,10 +118,7 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       }
     }, 16)
 
-    return () => {
-      clearInterval(interval)
-      emu.gamepadEvent = orig
-    }
+    return () => clearInterval(interval)
   }, [loaded, gamepadConnected])
 
   useEffect(() => {
@@ -169,6 +161,20 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       if (document.querySelector('script[src="/emulatorjs/loader.js"]')) {
         return
       }
+
+      // Terminate native GamepadHandler immediately on creation
+      let _EJS_emulator: any
+      Object.defineProperty(window, 'EJS_emulator', {
+        configurable: true,
+        enumerable: true,
+        get() { return _EJS_emulator },
+        set(val: any) {
+          if (val?.gamepad?.terminate) {
+            val.gamepad.terminate()
+          }
+          _EJS_emulator = val
+        },
+      })
 
       const script = document.createElement('script')
       script.src = '/emulatorjs/loader.js'
