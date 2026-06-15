@@ -77,46 +77,14 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
   useAutoSave({ gameId: game.id, onSave: handleSave, enabled: loaded })
 
-  useEffect(() => {
-    if (!loaded) return
-
-    const prev = new Map<number, number>()
-    const THRESHOLD = 0.5
-    const DEADZONE = 0.25
-
-    const interval = setInterval(() => {
-      const emu = (window as any).EJS_emulator
-      if (!emu?.gameManager?.functions?.simulateInput) return
-
-      const gamepads = navigator.getGamepads()
-      if (!gamepads) return
-      const gamepad = Array.from(gamepads).find(g => g !== null)
-      if (!gamepad) return
-
-      const send = (idx: number, val: number) => {
-        const prevVal = prev.get(idx) ?? 0
-        if (prevVal === val) return
-        prev.set(idx, val)
-        emu.gameManager.simulateInput(0, idx, val)
-      }
-
-      const BTN_MAP = [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-      for (let i = 0; i <= 11; i++) {
-        const mapped = BTN_MAP[i]
-        send(mapped, gamepad.buttons[i]?.pressed ? 1 : 0)
-      }
-
-      const ax = Math.abs(gamepad.axes[0] ?? 0) < DEADZONE ? 0 : (gamepad.axes[0] ?? 0)
-      const ay = Math.abs(gamepad.axes[1] ?? 0) < DEADZONE ? 0 : (gamepad.axes[1] ?? 0)
-
-      send(12, (gamepad.buttons[12]?.pressed ? 1 : 0) || (ay < -THRESHOLD ? 1 : 0))
-      send(13, (gamepad.buttons[13]?.pressed ? 1 : 0) || (ay > THRESHOLD ? 1 : 0))
-      send(14, (gamepad.buttons[14]?.pressed ? 1 : 0) || (ax < -THRESHOLD ? 1 : 0))
-      send(15, (gamepad.buttons[15]?.pressed ? 1 : 0) || (ax > THRESHOLD ? 1 : 0))
-    }, 16)
-
-    return () => clearInterval(interval)
-  }, [loaded])
+  // Gamepad is handled natively by EmulatorJS. The bridge
+  // script (public/emulatorjs/src/gamepad.js) is loaded before
+  // loader.js so that window.GamepadHandler exists when the
+  // EmulatorJS constructor runs.  When GamepadHandler is present,
+  // the minified EmulatorJS wires up its own polling loop and
+  // button mapping via simulateInput — both buttons and analog
+  // sticks work natively with correct RetroArch indices for each
+  // core.
 
   useEffect(() => {
     if (!loaded) return
@@ -159,38 +127,51 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         return
       }
 
-      const script = document.createElement('script')
-      script.src = '/emulatorjs/loader.js'
-      script.async = false
-      script.onload = async () => {
-        setLoaded(true)
-        const { data: { user } } = await supabaseRef.current.auth.getUser()
-        if (user) {
-          const { data: existing } = await supabaseRef.current
-            .from('play_sessions')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('game_id', game.id)
-            .is('ended_at', null)
-            .maybeSingle()
+      const loadGamepad = () => new Promise<void>(resolve => {
+        const s = document.createElement('script')
+        s.src = '/emulatorjs/src/gamepad.js'
+        s.async = false
+        s.onload = () => resolve()
+        s.onerror = () => resolve()
+        document.head.appendChild(s)
+      })
 
-          if (existing) {
-            sessionIdRef.current = existing.id
-          } else {
-            const { data: sessionData } = await supabaseRef.current
+      ;(async () => {
+        await loadGamepad()
+
+        const script = document.createElement('script')
+        script.src = '/emulatorjs/loader.js'
+        script.async = false
+        script.onload = async () => {
+          setLoaded(true)
+          const { data: { user } } = await supabaseRef.current.auth.getUser()
+          if (user) {
+            const { data: existing } = await supabaseRef.current
               .from('play_sessions')
-              .insert({ user_id: user.id, game_id: game.id })
               .select('id')
-              .single()
-            if (sessionData) sessionIdRef.current = sessionData.id
-          }
-        }
+              .eq('user_id', user.id)
+              .eq('game_id', game.id)
+              .is('ended_at', null)
+              .maybeSingle()
 
-        const pingInterval = setInterval(() => pingLastSeen(), 8_000)
-        cleanups.push(() => clearInterval(pingInterval))
-      }
-      script.onerror = () => { setError('Error al cargar el emulador') }
-      document.body.appendChild(script)
+            if (existing) {
+              sessionIdRef.current = existing.id
+            } else {
+              const { data: sessionData } = await supabaseRef.current
+                .from('play_sessions')
+                .insert({ user_id: user.id, game_id: game.id })
+                .select('id')
+                .single()
+              if (sessionData) sessionIdRef.current = sessionData.id
+            }
+          }
+
+          const pingInterval = setInterval(() => pingLastSeen(), 8_000)
+          cleanups.push(() => clearInterval(pingInterval))
+        }
+        script.onerror = () => { setError('Error al cargar el emulador') }
+        document.body.appendChild(script)
+      })()
 
       const checkEmulator = setInterval(() => {
         const emu = (window as any).EJS_emulator
