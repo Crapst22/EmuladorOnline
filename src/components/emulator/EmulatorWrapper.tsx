@@ -100,8 +100,10 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         emu.gameManager.simulateInput(0, idx, val)
       }
 
+      const BTN_MAP = [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
       for (let i = 0; i <= 11; i++) {
-        send(i, gamepad.buttons[i]?.pressed ? 1 : 0)
+        const mapped = BTN_MAP[i]
+        send(mapped, gamepad.buttons[i]?.pressed ? 1 : 0)
       }
 
       const ax = Math.abs(gamepad.axes[0] ?? 0) < DEADZONE ? 0 : (gamepad.axes[0] ?? 0)
