@@ -55,13 +55,24 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       if (srm) {
         const blob = new Blob([srm], { type: 'application/octet-stream' })
         await uploadSave(blob, 'srm')
+        console.log('[Save] SRM subida OK, size:', srm.length)
+      } else {
+        console.warn('[Save] SRM no encontrada (getSaveFile retornó null)')
+        console.warn('[Save] saveFilePath:', emu.gameManager.getSaveFilePath())
       }
+    } catch (e) {
+      console.error('[Save] Error al obtener SRM:', e)
+    }
+    try {
       const state = emu.gameManager.getState()
       if (state) {
         const blob = new Blob([state], { type: 'application/octet-stream' })
         await uploadSave(blob, 'state')
+        console.log('[Save] State subido OK, size:', state.length)
       }
-    } catch {}
+    } catch (e) {
+      console.error('[Save] Error al obtener state:', e)
+    }
     emu.saveSettings?.()
   }, [uploadSave])
 
@@ -104,11 +115,18 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
 
     const cleanups: (() => void)[] = []
     let srmInjected = false
+    let stateData: Uint8Array | null = null
 
-    downloadLatestSave('srm').then(async (srmBlob) => {
+    Promise.all([
+      downloadLatestSave('srm'),
+      downloadLatestSave('state'),
+    ]).then(async ([srmBlob, stateBlob]) => {
       let srmData: Uint8Array | null = null
       if (srmBlob) {
         srmData = new Uint8Array(await srmBlob.arrayBuffer())
+      }
+      if (stateBlob) {
+        stateData = new Uint8Array(await stateBlob.arrayBuffer())
       }
 
       window.EJS_player = '#game-emulator'
@@ -120,6 +138,10 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
       window.EJS_startOnLoaded = true
       window.EJS_gameID = game.id
       window.EJS_gameName = game.id
+      window.EJS_defaultOptions = window.EJS_defaultOptions || {}
+      if (game.console_type === 'n64') {
+        window.EJS_defaultOptions['mupen64plus-savetype'] = 'auto'
+      }
 
       if (document.querySelector('script[src="/emulatorjs/loader.js"]')) {
         return
@@ -189,12 +211,14 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             srmInjected = true
             try {
               const saveFilePath = emu.gameManager.getSaveFilePath()
+              console.log('[Start] saveFilePath:', saveFilePath)
               let injected = false
               try {
                 emu.gameManager.writeFile(saveFilePath, srmData)
                 injected = true
+                console.log('[Start] SRM escrita en:', saveFilePath)
               } catch (e) {
-                console.warn('Ruta principal de save no válida:', e)
+                console.warn('[Start] Ruta principal no válida:', e)
               }
               const altExtensions = ['.srm', '.eep', '.sra', '.fla']
               const basePath = saveFilePath ? saveFilePath.replace(/\.\w+$/, '') : '/data/saves/save'
@@ -204,16 +228,18 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
                 try {
                   emu.gameManager.writeFile(altPath, srmData)
                   injected = true
+                  console.log('[Start] SRM escrita en alt:', altPath)
                 } catch (e) {}
               }
               if (injected) {
                 emu.gameManager.loadSaveFiles()
+                console.log('[Start] loadSaveFiles OK')
               } else {
                 throw new Error('No se pudo escribir la save en ninguna ruta')
               }
             } catch (e: any) {
               srmInjected = false
-              console.error('Error al inyectar SRM (intento ' + attempt + '):', e)
+              console.error('[Start] Error inyectar SRM (intento ' + attempt + '):', e)
               if (attempt < 5) {
                 setTimeout(() => tryInjectSRM(attempt + 1), 1000)
               } else {
@@ -222,7 +248,33 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
             }
           }
 
-          emu.on('start', () => tryInjectSRM(0))
+          const tryLoadState = () => {
+            if (!stateData || !emu.gameManager) return
+            setTimeout(() => {
+              try {
+                emu.gameManager.loadState(stateData!)
+                console.log('[Start] Save state auto-cargado OK')
+              } catch (e) {
+                console.warn('[Start] Error al auto-cargar state:', e)
+              }
+            }, 2000)
+          }
+
+          const configureN64Save = () => {
+            if (game.console_type !== 'n64' || !emu.gameManager) return
+            try {
+              emu.gameManager.setVariable('mupen64plus-savetype', 'auto')
+              console.log('[Start] N64 savetype configurado a auto')
+            } catch (e) {
+              console.warn('[Start] No se pudo configurar N64 savetype:', e)
+            }
+          }
+
+          emu.on('start', () => {
+            configureN64Save()
+            tryInjectSRM(0)
+            tryLoadState()
+          })
 
           emu.on('exit', async () => {
             await handleSave()

@@ -414,20 +414,12 @@ class EJS_GameManager {
     supportsStates() {
         return !!this.functions.supportsStates();
     }
-    getSaveFile(save) {
-        if (save !== false) {
-            this.saveSaveFiles();
-        }
-        const path = this.getSaveFilePath();
-        if (path && this.FS.analyzePath(path).exists) {
-            return this.FS.readFile(path);
-        }
+    scanSavesDir(dir) {
         try {
-            const savesDir = "/data/saves";
-            const entries = this.FS.readdir(savesDir);
+            const entries = this.FS.readdir(dir);
             for (const name of entries) {
                 if (name === "." || name === "..") continue;
-                const fullPath = savesDir + "/" + name;
+                const fullPath = dir + "/" + name;
                 try {
                     const stat = this.FS.stat(fullPath);
                     if (this.FS.isFile(stat.mode)) {
@@ -436,6 +428,80 @@ class EJS_GameManager {
                 } catch(e) {}
             }
         } catch(e) {}
+        return null;
+    }
+
+    listAllFiles(dir) {
+        const result = [];
+        try {
+            const entries = this.FS.readdir(dir);
+            for (const name of entries) {
+                if (name === "." || name === "..") continue;
+                const fullPath = dir + "/" + name;
+                try {
+                    const stat = this.FS.stat(fullPath);
+                    if (this.FS.isFile(stat.mode)) {
+                        result.push({ path: fullPath, size: stat.size });
+                    } else if (this.FS.isDir(stat.mode)) {
+                        result.push(...this.listAllFiles(fullPath));
+                    }
+                } catch(e) {}
+            }
+        } catch(e) {}
+        return result;
+    }
+
+    getSaveMemory() {
+        try {
+            if (!this._gm_getMemData) {
+                this._gm_getMemData = this.Module.cwrap("retro_get_memory_data", "number", ["number"]);
+                this._gm_getMemSize = this.Module.cwrap("retro_get_memory_size", "number", ["number"]);
+            }
+            const ptr = this._gm_getMemData(0);
+            const size = this._gm_getMemSize(0);
+            if (ptr && size > 0 && ptr > 0 && ptr + size <= this.Module.HEAPU8.length) {
+                return new Uint8Array(this.Module.HEAPU8.subarray(ptr, ptr + size));
+            }
+        } catch(e) {
+            if (this.EJS?.debug) console.log("[getSaveMemory] cwrap not available:", e.message);
+        }
+        try {
+            if (this.Module._retro_get_memory_data) {
+                const ptr = this.Module._retro_get_memory_data(0);
+                const size = this.Module._retro_get_memory_size ? this.Module._retro_get_memory_size(0) : 0;
+                if (ptr && size > 0 && ptr > 0 && ptr + size <= this.Module.HEAPU8.length) {
+                    return new Uint8Array(this.Module.HEAPU8.subarray(ptr, ptr + size));
+                }
+            }
+        } catch(e) {
+            if (this.EJS?.debug) console.log("[getSaveMemory] Module._retro_get_memory_data not available:", e.message);
+        }
+        return null;
+    }
+
+    getSaveFile(save) {
+        if (save !== false) {
+            this.saveSaveFiles();
+        }
+        const path = this.getSaveFilePath();
+        if (path && this.FS.analyzePath(path).exists) {
+            return this.FS.readFile(path);
+        }
+        let data = this.scanSavesDir("/data/saves");
+        if (data) return data;
+        data = this.scanSavesDir("/home/web_user/.config/retroarch/saves");
+        if (data) return data;
+        data = this.scanSavesDir("/");
+        if (data) return data;
+        data = this.getSaveMemory();
+        if (data) {
+            if (this.EJS?.debug) console.log("[getSaveFile] Fallback: save RAM leída de la memoria WASM, size:", data.length);
+            return data;
+        }
+        if (this.EJS?.debug) {
+            const allFiles = this.listAllFiles("/");
+            console.log("[getSaveFile] No se encontró save. Archivos en FS:", JSON.stringify(allFiles));
+        }
         return null;
     }
     loadSaveFiles() {
