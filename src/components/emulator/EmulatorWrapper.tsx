@@ -26,6 +26,7 @@ declare global {
     EJS_loadStateURL?: string
     EJS_gameID?: string
     EJS_gameName?: string
+    EJS_defaultOptions?: Record<string, string>
   }
 }
 
