@@ -56,7 +56,12 @@ export function GameCard({ game, onDelete, onRename, index, userId }: GameCardPr
               <Play className="h-8 w-8 text-[#FFD700] ml-1" />
             </div>
           </div>
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1"
+          {formatPlayTime(game.play_time_seconds || 0) && (
+            <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#050510]/80 border border-[#FFD700]/30">
+              <span className="font-pixel text-[0.4rem] text-[#FFD700]">TIEMPO {formatPlayTime(game.play_time_seconds || 0)}</span>
+            </div>
+          )}
+          <div className="absolute top-12 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1"
             onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#050510] border border-[#FFD700]/20 rounded-none"
               onClick={() => setIsEditing(!isEditing)}>
@@ -84,11 +89,6 @@ export function GameCard({ game, onDelete, onRename, index, userId }: GameCardPr
             </div>
             <p className="font-retro text-sm text-[#808080]">{SUPPORTED_CONSOLES[game.console_type]?.name?.toUpperCase() || 'SNES'}</p>
           </div>
-          {formatPlayTime(game.play_time_seconds || 0) && (
-            <p className="font-retro text-xs text-[#FFD700]/60 mt-1">
-              TIEMPO: {formatPlayTime(game.play_time_seconds || 0)}
-            </p>
-          )}
         </CardContent>
       </Card>
     </motion.div>
