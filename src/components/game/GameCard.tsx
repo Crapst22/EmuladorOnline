@@ -18,6 +18,15 @@ interface GameCardProps {
   userId?: string
 }
 
+function formatPlayTime(seconds: number) {
+  if (seconds <= 0) return null
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m`
+  return `${seconds}s`
+}
+
 export function GameCard({ game, onDelete, onRename, index, userId }: GameCardProps) {
   const isOwned = game.owner_id === userId
   const router = useRouter()
@@ -75,6 +84,11 @@ export function GameCard({ game, onDelete, onRename, index, userId }: GameCardPr
             </div>
             <p className="font-retro text-sm text-[#808080]">{SUPPORTED_CONSOLES[game.console_type]?.name?.toUpperCase() || 'SNES'}</p>
           </div>
+          {formatPlayTime(game.play_time_seconds || 0) && (
+            <p className="font-retro text-xs text-[#FFD700]/60 mt-1">
+              TIEMPO: {formatPlayTime(game.play_time_seconds || 0)}
+            </p>
+          )}
         </CardContent>
       </Card>
     </motion.div>

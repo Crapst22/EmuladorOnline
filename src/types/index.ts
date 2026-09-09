@@ -87,6 +87,7 @@ export interface Game {
   archived: boolean
   created_at: string
   updated_at: string
+  play_time_seconds?: number
 }
 
 export interface Save {

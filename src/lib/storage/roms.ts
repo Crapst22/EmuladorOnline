@@ -352,13 +352,22 @@ export async function getDashboardGames() {
       .order('updated_at', { ascending: false }),
     supabase
       .from('play_sessions')
-      .select('game_id')
+      .select('game_id, started_at, ended_at')
       .eq('user_id', user.id),
   ])
 
   const ownedGames = ownedResult.data || []
   const sessions = sessionsResult.data || []
   const playedIds = [...new Set(sessions.map(s => s.game_id))]
+
+  const playTimeByGame = new Map<string, number>()
+  for (const s of sessions) {
+    if (!s.ended_at) continue
+    const ms = new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()
+    if (ms > 0) {
+      playTimeByGame.set(s.game_id, (playTimeByGame.get(s.game_id) || 0) + ms)
+    }
+  }
 
   let playedGames: Game[] = []
   if (playedIds.length > 0) {
@@ -380,7 +389,12 @@ export async function getDashboardGames() {
     }
   }
 
-  return { games: merged, userId: user.id }
+  const games = merged.map((g) => ({
+    ...g,
+    play_time_seconds: Math.round((playTimeByGame.get(g.id) || 0) / 1000),
+  }))
+
+  return { games, userId: user.id }
 }
 
 export async function removePlaySessions(gameId: string) {
