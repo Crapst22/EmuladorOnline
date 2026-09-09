@@ -38,10 +38,24 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
     )
   }
 
+  const { data: sessions } = await supabase
+    .from('play_sessions')
+    .select('started_at, ended_at')
+    .eq('user_id', user.id)
+    .eq('game_id', id)
+
+  const playTimeSeconds = Math.round(
+    (sessions || []).reduce((acc, s) => {
+      if (!s.ended_at) return acc
+      const ms = new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()
+      return acc + (ms > 0 ? ms : 0)
+    }, 0) / 1000
+  )
+
   return (
     <div className="min-h-screen pb-32 md:pb-0">
       <div className="mx-auto max-w-4xl px-4 py-4">
-        <EmulatorWrapper game={game} romUrl={urlData.signedUrl} />
+        <EmulatorWrapper game={game} romUrl={urlData.signedUrl} initialPlayTimeSeconds={playTimeSeconds} />
       </div>
     </div>
   )

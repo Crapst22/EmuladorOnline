@@ -33,9 +33,19 @@ declare global {
 interface EmulatorWrapperProps {
   game: Game
   romUrl: string
+  initialPlayTimeSeconds?: number
 }
 
-export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
+function formatTimer(totalSeconds: number) {
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  const mm = String(m).padStart(2, '0')
+  const ss = String(s).padStart(2, '0')
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
+}
+
+export function EmulatorWrapper({ game, romUrl, initialPlayTimeSeconds = 0 }: EmulatorWrapperProps) {
   const router = useRouter()
   const initialized = useRef(false)
   const emulatorRef = useRef<any>(null)
@@ -45,8 +55,16 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
   const [error, setError] = useState('')
   const [loadError, setLoadError] = useState('')
   const [warning, setWarning] = useState('')
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const { syncStatus, uploadSave, downloadLatestSave } = useSync(game.id)
   const { gamepadConnected } = useGamepad()
+
+  useEffect(() => {
+    const interval = setInterval(() => setElapsedSeconds((s) => s + 1), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const totalPlayTime = initialPlayTimeSeconds + elapsedSeconds
 
   const handleSave = useCallback(async () => {
     console.log('[Save] ======= handleSave INICIADO =======')
@@ -388,7 +406,14 @@ export function EmulatorWrapper({ game, romUrl }: EmulatorWrapperProps) {
         </div>
         {/* Console frame */}
         <div className="retro-panel p-1">
-          <div className="bg-black border-2 border-[#FFD700]/20">
+          <div className="relative bg-black border-2 border-[#FFD700]/20">
+            {loaded && (
+              <div className="absolute top-2 left-2 z-10 px-2 py-1 bg-[#050510]/80 border border-[#FFD700]/30 shadow-[0_0_6px_rgba(255,215,0,0.15)]">
+                <span className="font-pixel text-[0.45rem] text-[#FFD700] tracking-wider">
+                  TIEMPO {formatTimer(totalPlayTime)}
+                </span>
+              </div>
+            )}
             <div id="game-emulator" className="min-h-[400px]" />
           </div>
         </div>
