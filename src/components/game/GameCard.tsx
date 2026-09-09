@@ -58,7 +58,7 @@ export function GameCard({ game, onDelete, onRename, index, userId }: GameCardPr
           </div>
           {formatPlayTime(game.play_time_seconds || 0) && (
             <div className="absolute top-1 left-1 px-1 py-px bg-[#050510]/80 border border-[#FFD700]/30">
-              <span className="font-pixel text-[0.3rem] text-[#FFD700] leading-none">{formatPlayTime(game.play_time_seconds || 0)}</span>
+              <span className="font-pixel text-[0.3rem] text-[#FFD700] leading-none">TIEMPO {formatPlayTime(game.play_time_seconds || 0)}</span>
             </div>
           )}
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1"
