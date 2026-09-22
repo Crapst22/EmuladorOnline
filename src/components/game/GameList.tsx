@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import * as roms from '@/lib/storage/roms'
+import { useCompletions } from '@/hooks/useCompletions'
 import type { Game } from '@/types'
 import { motion } from 'framer-motion'
 
@@ -20,6 +21,7 @@ export function GameList() {
   const [userId, setUserId] = useState<string | null>(null)
   const { toast } = useToast()
   const supabase = createClient()
+  const { completedIds, toggleCompletion } = useCompletions()
 
   const loadGames = useCallback(async () => {
     const result = await roms.getDashboardGames()
@@ -131,7 +133,7 @@ export function GameList() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map((game, i) => (
-            <GameCard key={game.id} game={game} onDelete={handleDelete} onRename={handleRename} index={i} userId={userId || undefined} />
+            <GameCard key={game.id} game={game} onDelete={handleDelete} onRename={handleRename} onToggleCompleted={toggleCompletion} index={i} userId={userId || undefined} completed={completedIds.has(game.id)} />
           ))}
         </div>
       )}

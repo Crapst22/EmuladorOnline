@@ -9,13 +9,16 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { SUPPORTED_CONSOLES } from '@/types'
 import type { Game } from '@/types'
+import { GameCompletedToggle } from './GameCompletedToggle'
 
 interface GameCardProps {
   game: Game
   onDelete: (id: string) => void
   onRename: (id: string, title: string) => void
+  onToggleCompleted: (id: string) => void
   index: number
   userId?: string
+  completed?: boolean
 }
 
 function formatPlayTime(seconds: number) {
@@ -27,7 +30,7 @@ function formatPlayTime(seconds: number) {
   return `${seconds}s`
 }
 
-export function GameCard({ game, onDelete, onRename, index, userId }: GameCardProps) {
+export function GameCard({ game, onDelete, onRename, onToggleCompleted, index, userId, completed }: GameCardProps) {
   const isOwned = game.owner_id === userId
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
@@ -61,16 +64,19 @@ export function GameCard({ game, onDelete, onRename, index, userId }: GameCardPr
               <span className="font-pixel text-[0.3rem] text-[#FFD700] leading-none">TIEMPO {formatPlayTime(game.play_time_seconds || 0)}</span>
             </div>
           )}
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1"
-            onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#050510] border border-[#FFD700]/20 rounded-none"
-              onClick={() => setIsEditing(!isEditing)}>
-              <Edit3 className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
-              onClick={() => onDelete(game.id)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div className="absolute top-2 right-2 flex items-center gap-1">
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#050510] border border-[#FFD700]/20 rounded-none"
+                onClick={() => setIsEditing(!isEditing)}>
+                <Edit3 className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
+                onClick={() => onDelete(game.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <GameCompletedToggle gameId={game.id} completed={!!completed} onToggleCompleted={onToggleCompleted} />
           </div>
         </div>
         <CardContent className="p-3">

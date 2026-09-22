@@ -11,6 +11,8 @@ import type { Game } from '@/types'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
+import { useCompletions } from '@/hooks/useCompletions'
+import { GameCompletedToggle } from './GameCompletedToggle'
 
 interface GameWithOwner extends Game {
   owner_username?: string
@@ -26,6 +28,7 @@ export function AllGamesList() {
   const supabase = createClient()
   const router = useRouter()
   const { toast } = useToast()
+  const { completedIds, toggleCompletion } = useCompletions()
 
   const loadGames = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -139,19 +142,22 @@ export function AllGamesList() {
                       <Gamepad2 className="h-8 w-8 text-[#FFD700]" />
                     </div>
                   </div>
-                  {isAdmin && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1"
-                      onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#050510] border border-[#FFD700]/20 rounded-none"
-                        onClick={() => { setEditingId(game.id); setEditTitle(game.title) }}>
-                        <Edit3 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
-                        onClick={() => handleDelete(game.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="absolute top-2 right-2 flex items-center gap-1">
+                    {isAdmin && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#050510] border border-[#FFD700]/20 rounded-none"
+                          onClick={() => { setEditingId(game.id); setEditTitle(game.title) }}>
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-[#050510]/80 hover:bg-[#FF2400]/20 hover:text-[#FF2400] border border-[#FFD700]/20 rounded-none"
+                          onClick={() => handleDelete(game.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <GameCompletedToggle gameId={game.id} completed={completedIds.has(game.id)} onToggleCompleted={toggleCompletion} />
+                  </div>
                   <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => e.stopPropagation()}>
                     <span className="flex items-center gap-1 px-2 py-0.5 bg-[#050510]/80 border border-[#FFD700]/20 text-[0.5rem] font-retro text-[#A0A0A0]">
