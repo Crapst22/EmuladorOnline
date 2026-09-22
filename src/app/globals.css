@@ -340,6 +340,19 @@
   50% { text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.2); }
 }
 
+.retro-lit {
+  animation: retro-lit-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes retro-lit-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.6), 0 0 14px rgba(255, 215, 0, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.95), 0 0 28px rgba(255, 215, 0, 0.5);
+  }
+}
+
 @keyframes parallax-stars-1 {
   from { transform: translateY(0); }
   to { transform: translateY(-200px); }

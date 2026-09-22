@@ -21,7 +21,7 @@ export function GameCompletedToggle({ gameId, completed, onToggleCompleted }: Ga
       }}
       className={`flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center border transition-all ${
         completed
-          ? 'border-[#FFD700] bg-[#FFD700] text-[#050510]'
+          ? 'retro-lit border-[#FFFF99] bg-gradient-to-br from-[#FFD700] to-[#DAA520] text-[#050510]'
           : 'border-[#FFD700]/30 bg-[#050510]/80 text-[#FFD700]/40 hover:border-[#FFD700]/70 hover:text-[#FFD700]'
       }`}
     >
