@@ -3,6 +3,26 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+const STORAGE_KEY = 'retrocloud-completions'
+
+function readLocal(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function writeLocal(ids: Set<string>) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]))
+  } catch {
+    // ignore
+  }
+}
+
 export function useCompletions() {
   const supabase = createClient()
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
@@ -18,12 +38,19 @@ export function useCompletions() {
       return
     }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('game_completions')
       .select('game_id')
       .eq('user_id', user.id)
 
-    setCompletedIds(new Set((data || []).map((c) => c.game_id)))
+    if (error) {
+      // Table not available yet (migration pendiente): usar datos locales
+      setCompletedIds(readLocal())
+    } else {
+      const ids = new Set((data || []).map((c) => c.game_id))
+      setCompletedIds(ids)
+      writeLocal(ids)
+    }
     setLoading(false)
   }, [supabase])
 
@@ -39,17 +66,17 @@ export function useCompletions() {
       if (!user) return
 
       const isCompleted = completedIds.has(gameId)
+      const next = new Set(completedIds)
+      if (isCompleted) {
+        next.delete(gameId)
+      } else {
+        next.add(gameId)
+      }
 
-      setCompletedIds((prev) => {
-        const next = new Set(prev)
-        if (isCompleted) {
-          next.delete(gameId)
-        } else {
-          next.add(gameId)
-        }
-        return next
-      })
+      setCompletedIds(next)
+      writeLocal(next)
 
+      // Sincronizar con la base (si falla, la marca queda igual en local)
       if (isCompleted) {
         await supabase
           .from('game_completions')
@@ -57,16 +84,9 @@ export function useCompletions() {
           .eq('game_id', gameId)
           .eq('user_id', user.id)
       } else {
-        const { error } = await supabase
+        await supabase
           .from('game_completions')
           .insert({ game_id: gameId, user_id: user.id })
-        if (error) {
-          setCompletedIds((prev) => {
-            const next = new Set(prev)
-            next.delete(gameId)
-            return next
-          })
-        }
       }
     },
     [supabase, completedIds]
