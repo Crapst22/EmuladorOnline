@@ -341,15 +341,16 @@
 }
 
 .retro-lit {
+  box-shadow: 0 0 12px rgba(255, 215, 0, 1), 0 0 24px rgba(255, 215, 0, 0.7), 0 0 40px rgba(255, 200, 0, 0.4);
   animation: retro-lit-pulse 1.6s ease-in-out infinite;
 }
 
 @keyframes retro-lit-pulse {
   0%, 100% {
-    box-shadow: 0 0 6px rgba(255, 215, 0, 0.6), 0 0 14px rgba(255, 215, 0, 0.25);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 1), 0 0 24px rgba(255, 215, 0, 0.7), 0 0 40px rgba(255, 200, 0, 0.4);
   }
   50% {
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.95), 0 0 28px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 18px rgba(255, 230, 80, 1), 0 0 34px rgba(255, 215, 0, 0.9), 0 0 56px rgba(255, 200, 0, 0.6);
   }
 }
 

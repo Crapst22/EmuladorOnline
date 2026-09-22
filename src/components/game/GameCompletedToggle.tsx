@@ -19,13 +19,13 @@ export function GameCompletedToggle({ gameId, completed, onToggleCompleted }: Ga
         e.stopPropagation()
         onToggleCompleted(gameId)
       }}
-      className={`flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center border transition-all ${
+      className={`z-10 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center border-2 transition-all ${
         completed
-          ? 'retro-lit border-[#FFFF99] bg-gradient-to-br from-[#FFD700] to-[#DAA520] text-[#050510]'
+          ? 'retro-lit border-[#FFF6C4] bg-[#FFE44D] text-[#050510]'
           : 'border-[#FFD700]/30 bg-[#050510]/80 text-[#FFD700]/40 hover:border-[#FFD700]/70 hover:text-[#FFD700]'
       }`}
     >
-      <Trophy className="h-3.5 w-3.5" />
+      <Trophy className={`h-4 w-4 fill-current ${completed ? '' : 'opacity-80'}`} />
     </button>
   )
 }
