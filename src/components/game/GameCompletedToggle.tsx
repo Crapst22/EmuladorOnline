@@ -1,6 +1,6 @@
 'use client'
 
-import { Trophy } from 'lucide-react'
+import { Check } from 'lucide-react'
 
 interface GameCompletedToggleProps {
   gameId: string
@@ -25,7 +25,7 @@ export function GameCompletedToggle({ gameId, completed, onToggleCompleted }: Ga
           : 'border-[#FFD700]/30 bg-[#050510]/80 text-[#FFD700]/40 hover:border-[#FFD700]/70 hover:text-[#FFD700]'
       }`}
     >
-      <Trophy className={`h-4 w-4 fill-current ${completed ? '' : 'opacity-80'}`} />
+      <Check className={`h-4 w-4 ${completed ? 'font-bold' : 'opacity-80'}`} strokeWidth={3} />
     </button>
   )
 }

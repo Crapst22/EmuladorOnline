@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { GameList } from '@/components/game/GameList'
+import { useCompletions } from '@/hooks/useCompletions'
 import { createClient } from '@/lib/supabase/client'
 
 
@@ -14,6 +15,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({ gameCount: 0, totalMinutes: 0, lastSession: null })
   const supabase = createClient()
+  const { completedIds } = useCompletions()
 
   useEffect(() => {
     async function loadStats() {
@@ -87,7 +89,7 @@ export default function DashboardPage() {
           Tus ROMs y partidas guardadas
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="retro-panel-dark p-4 relative">
           <div className="retro-corner-tl" />
           <div className="retro-corner-tr" />
@@ -111,6 +113,14 @@ export default function DashboardPage() {
           <div className="retro-corner-br" />
           <p className="font-pixel text-[0.5rem] text-[#808080] tracking-wider mb-1">{'\u2605'} ULTIMA SESION</p>
           <p className="font-pixel text-[0.55rem] text-[#FFD700] leading-relaxed">{formatLastSession(stats.lastSession)}</p>
+        </div>
+        <div className="retro-panel-dark p-4 relative">
+          <div className="retro-corner-tl" />
+          <div className="retro-corner-tr" />
+          <div className="retro-corner-bl" />
+          <div className="retro-corner-br" />
+          <p className="font-pixel text-[0.5rem] text-[#808080] tracking-wider mb-1">{'\u2713'} JUEGOS TERMINADOS</p>
+          <p className="font-pixel text-[1.2rem] text-[#FFD700]">{completedIds.size}</p>
         </div>
       </div>
       <GameList />
